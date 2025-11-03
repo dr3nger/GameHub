@@ -49,6 +49,7 @@ const translations = {
     category: 'Category',
     categories: 'Categories',
     addCategory: 'Add category (press Enter)',
+    addCategoryBtn: 'Add Category', // <<< تمت الإضافة
     uploadImage: 'Upload Cover Image',
     uploadScreenshots: 'Upload Screenshots',
     screenshots: 'Screenshots',
@@ -108,6 +109,7 @@ const translations = {
     category: 'الفئة',
     categories: 'التصنيفات',
     addCategory: 'أضف تصنيف (اضغط Enter)',
+    addCategoryBtn: 'إضافة تصنيف', // <<< تمت الإضافة
     uploadImage: 'رفع صورة الغلاف',
     uploadScreenshots: 'رفع لقطات شاشة',
     screenshots: 'لقطات الشاشة',
@@ -167,6 +169,7 @@ const translations = {
     category: 'Kategorie',
     categories: 'Kategorien',
     addCategory: 'Kategorie hinzufügen (Enter)',
+    addCategoryBtn: 'Kategorie hinzufügen', // <<< تمت الإضافة
     uploadImage: 'Coverbild hochladen',
     uploadScreenshots: 'Screenshots hochladen',
     screenshots: 'Screenshots',
@@ -399,6 +402,19 @@ export default function Home() {
   const [userRating, setUserRating] = useState(null); // Stores the user's click
   // <<< END Rating States >>>
 
+  // <<< START HISTORY/BACK BUTTON REFS >>>
+  // Refs to track current state for the popstate listener
+  const selectedGameRef = useRef(selectedGame);
+  useEffect(() => {
+    selectedGameRef.current = selectedGame;
+  }, [selectedGame]);
+
+  const showDashboardRef = useRef(showDashboard);
+  useEffect(() => {
+    showDashboardRef.current = showDashboard;
+  }, [showDashboard]);
+  // <<< END HISTORY/BACK BUTTON REFS >>>
+
   const [games, setGames] = useState([
     {
       id: 1,
@@ -524,6 +540,31 @@ export default function Home() {
   useEffect(() => {
     setCurrentPage(1);
   }, [sortBy, categoryFilter, searchResults]);
+
+  // <<< START URL HELPER >>>
+  // *** تم حذف دالة getBasePath ***
+  // <<< END URL HELPER >>>
+
+  // <<< START HISTORY/BACK BUTTON EFFECT >>>
+  useEffect(() => {
+    // *** تم حذف window.history.replaceState ***
+
+    const handleBrowserBack = (event) => {
+      // This fires when the user clicks the physical/browser back button
+      // We check our refs (state in listeners can be stale)
+      // Order matters: check game first, then dashboard
+      if (selectedGameRef.current) {
+        setSelectedGame(null);
+      } else if (showDashboardRef.current) {
+        setShowDashboard(false);
+      }
+    };
+
+    window.addEventListener('popstate', handleBrowserBack);
+    // Cleanup
+    return () => window.removeEventListener('popstate', handleBrowserBack);
+  }, []); // Empty dependency array, runs only once on mount
+  // <<< END HISTORY/BACK BUTTON EFFECT >>>
 
   const handleImageUpload = (e, target = 'new') => {
     const file = e.target.files[0];
@@ -660,6 +701,7 @@ export default function Home() {
     setSuggestions([]);
     setShowDashboard(false);
     setSelectedGame(null);
+    window.history.pushState({ view: 'home' }, ''); // <<< FIX 2
     // setCurrentPage(1); // Handled by useEffect
   };
 
@@ -669,6 +711,7 @@ export default function Home() {
     setSuggestions([]);
     setShowDashboard(false);
     setSelectedGame(null);
+    window.history.pushState({ view: 'home' }, ''); // <<< FIX 3
     // setCurrentPage(1); // Handled by useEffect
   };
   // --- End Search Logic ---
@@ -753,12 +796,12 @@ export default function Home() {
     setSearchQuery('');
     setUserRating(null); // <<< تمت الإضافة: إعادة تعيين تقييم المستخدم
     setHoverRating(0); // <<< تمت الإضافة: إعادة تعيين النجوم
+    window.history.pushState({ view: 'game' }, ''); // <<< FIX 4
   };
 
   const handleGoBack = () => {
-    setSelectedGame(null);
-    // Don't reset search results so user can go back to their search
-    // setSearchResults(null);
+    // setSelectedGame(null); // <<< تم الحذف: onpopstate سيعالج هذا
+    window.history.back(); // <<< تمت الإضافة: سيؤدي هذا إلى تشغيل onpopstate
   };
 
   // Handle 'Tags' dropdown click
@@ -769,6 +812,7 @@ export default function Home() {
     setSearchResults(null);
     setSearchQuery('');
     setSelectedGame(null); // *** تمت الإضافة: العودة للرئيسية ***
+    window.history.pushState({ view: 'home' }, ''); // <<< FIX 5
     // setCurrentPage(1); // Handled by useEffect
   };
 
@@ -822,6 +866,26 @@ export default function Home() {
   };
   // --- END RATING CLICK HANDLER ---
 
+  // <<< START URL FORMATTERS >>>
+  // Helper for standard web links
+  const formatWebUrl = (url) => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) {
+      return url;
+    }
+    return `https://${url}`;
+  };
+
+  // Helper for email
+  const formatEmailUrl = (email) => {
+    if (!email) return '#';
+    if (email.startsWith('mailto:')) {
+      return email;
+    }
+    return `mailto:${email}`;
+  };
+  // <<< END URL FORMATTERS >>>
+
   return (
     <div
       className={`min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 ${
@@ -845,6 +909,7 @@ export default function Home() {
                 // setCategoryFilter(''); // *** تم الحذف ***
                 // setSortBy('new'); // *** تم الحذف ***
                 setCurrentPage(1);
+                window.history.pushState({ view: 'home' }, ''); // <<< FIX 6
               }}
               className="flex items-center gap-3 order-1" // order-1
             >
@@ -889,6 +954,7 @@ export default function Home() {
                 onClick={() => {
                   setShowDashboard(true);
                   setSelectedGame(null);
+                  window.history.pushState({ view: 'dashboard' }, ''); // <<< FIX 7
                 }}
                 title={t.dashboard} // Tooltip
                 className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
@@ -1276,7 +1342,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {selectedGame.links.windows && (
                     <a
-                      href={selectedGame.links.windows}
+                      href={formatWebUrl(selectedGame.links.windows)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-3 p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
@@ -1287,7 +1353,7 @@ export default function Home() {
                   )}
                   {selectedGame.links.mac && (
                     <a
-                      href={selectedGame.links.mac}
+                      href={formatWebUrl(selectedGame.links.mac)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-3 p-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
@@ -1298,7 +1364,7 @@ export default function Home() {
                   )}
                   {selectedGame.links.linux && (
                     <a
-                      href={selectedGame.links.linux}
+                      href={formatWebUrl(selectedGame.links.linux)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-3 p-4 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-all"
@@ -1309,7 +1375,7 @@ export default function Home() {
                   )}
                   {selectedGame.links.android && (
                     <a
-                      href={selectedGame.links.android}
+                      href={formatWebUrl(selectedGame.links.android)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-3 p-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
@@ -1511,20 +1577,36 @@ export default function Home() {
                       </span>
                     ))}
                   </div>
-                  <input
-                    type="text"
-                    placeholder={t.addCategory}
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddCategory('new');
-                      }
-                    }}
-                    className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
-                                    placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                  />
+                  {/* <<< START MOBILE FIX: ADD BUTTON >>> */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={t.addCategory}
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCategory('new');
+                        }
+                      }}
+                      className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
+                        isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4' // Padding for button
+                      } py-2 text-white
+                                    placeholder-gray-400 focus:outline-none focus:border-purple-400`}
+                    />
+                    <button
+                      type="button" // Prevent form submission
+                      title={t.addCategoryBtn}
+                      onClick={() => handleAddCategory('new')}
+                      className={`absolute top-1/2 -translate-y-1/2 ${
+                        isRTL ? 'left-2' : 'right-2'
+                      } p-1.5 text-gray-400 hover:text-white bg-purple-600/50 hover:bg-purple-600 rounded-md`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {/* <<< END MOBILE FIX: ADD BUTTON >>> */}
                 </div>
 
                 <textarea
@@ -1889,20 +1971,36 @@ export default function Home() {
                               </span>
                             ))}
                           </div>
-                          <input
-                            type="text"
-                            placeholder={t.addCategory}
-                            value={editCategory}
-                            onChange={(e) => setEditCategory(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleAddCategory('edit');
-                              }
-                            }}
-                            className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
-                                            placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                          />
+                          {/* <<< START MOBILE FIX: ADD BUTTON >>> */}
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder={t.addCategory}
+                              value={editCategory}
+                              onChange={(e) => setEditCategory(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddCategory('edit');
+                                }
+                              }}
+                              className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
+                                isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4' // Padding for button
+                              } py-2 text-white
+                                            placeholder-gray-400 focus:outline-none focus:border-purple-400`}
+                            />
+                            <button
+                              type="button" // Prevent form submission
+                              title={t.addCategoryBtn}
+                              onClick={() => handleAddCategory('edit')}
+                              className={`absolute top-1/2 -translate-y-1/2 ${
+                                isRTL ? 'left-2' : 'right-2'
+                              } p-1.5 text-gray-400 hover:text-white bg-purple-600/50 hover:bg-purple-600 rounded-md`}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {/* <<< END MOBILE FIX: ADD BUTTON >>> */}
                         </div>
 
                         <div>
@@ -2107,7 +2205,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-6">
           {socialLinks.telegram && (
             <a
-              href={socialLinks.telegram}
+              href={formatWebUrl(socialLinks.telegram)}
               title="Telegram"
               target="_blank"
               rel="noopener noreferrer"
@@ -2118,7 +2216,7 @@ export default function Home() {
           )}
           {socialLinks.reddit && (
             <a
-              href={socialLinks.reddit}
+              href={formatWebUrl(socialLinks.reddit)}
               title="Reddit"
               target="_blank"
               rel="noopener noreferrer"
@@ -2130,7 +2228,7 @@ export default function Home() {
           )}
           {socialLinks.youtube && (
             <a
-              href={socialLinks.youtube}
+              href={formatWebUrl(socialLinks.youtube)}
               title="YouTube"
               target="_blank"
               rel="noopener noreferrer"
@@ -2141,7 +2239,7 @@ export default function Home() {
           )}
           {socialLinks.twitter && (
             <a
-              href={socialLinks.twitter}
+              href={formatWebUrl(socialLinks.twitter)}
               title="Twitter (X)"
               target="_blank"
               rel="noopener noreferrer"
@@ -2152,8 +2250,10 @@ export default function Home() {
           )}
           {socialLinks.email && (
             <a
-              href={`mailto:${socialLinks.email}`}
+              href={formatEmailUrl(socialLinks.email)}
               title="Email"
+              target="_blank" // تمت الإضافة
+              rel="noopener noreferrer" // تمت الإضافة
               className="text-gray-400 hover:text-white"
             >
               <Mail className="w-6 h-6" />
