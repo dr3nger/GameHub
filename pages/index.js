@@ -684,8 +684,9 @@ export default function Home() {
       {/* Header */}
       <header className="bg-black/30 backdrop-blur-md border-b border-purple-500/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
+          {/* تم تعديل هذا الجزء ليصبح متجاوباً */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Logo - Home Button */}
+            {/* Logo - Home Button (Order 1 on mobile and desktop) */}
             <button
               onClick={() => {
                 setShowDashboard(false);
@@ -697,7 +698,7 @@ export default function Home() {
                 setSortBy('new');
                 setCurrentPage(1);
               }}
-              className="flex items-center gap-3"
+              className="flex items-center gap-3 order-1" // order-1
             >
               <Gamepad2 className="w-8 h-8 text-purple-400" />
               <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
@@ -705,10 +706,53 @@ export default function Home() {
               </h1>
             </button>
 
-            {/* Search */}
+            {/* Controls (Order 2 on mobile, 4 on desktop) */}
+            <div className="flex items-center gap-2 order-2 md:order-4">
+              {/* Language Switcher */}
+              <div className="relative">
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  className={`w-full bg-white/10 border border-purple-500/30 rounded-lg font-semibold transition-all
+                           appearance-none cursor-pointer ${
+                             isRTL ? 'pr-10 pl-4' : 'pl-4 pr-10'
+                           } py-2 text-white
+                           focus:outline-none focus:border-purple-400`}
+                >
+                  <option value="en" className="bg-gray-800 text-white">
+                    EN
+                  </option>
+                  <option value="ar" className="bg-gray-800 text-white">
+                    AR
+                  </option>
+                  <option value="de" className="bg-gray-800 text-white">
+                    DE
+                  </option>
+                </select>
+                <ChevronDown
+                  className={`absolute top-2.5 ${
+                    isRTL ? 'left-3' : 'right-3'
+                  } w-5 h-5 text-gray-300 pointer-events-none`}
+                />
+              </div>
+
+              {/* Admin/Dashboard Button */}
+              <button
+                onClick={() => {
+                  setShowDashboard(true);
+                  setSelectedGame(null);
+                }}
+                title={t.dashboard} // Tooltip
+                className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
+              >
+                <LayoutDashboard className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search (Order 3 on mobile, 2 on desktop) */}
             <form
               onSubmit={handleSearchSubmit}
-              className="relative flex-1 max-w-md"
+              className="relative w-full md:flex-1 md:max-w-md order-3 md:order-2" // Responsive order and width
             >
               <div className="relative">
                 <Search
@@ -762,8 +806,8 @@ export default function Home() {
               </button>
             </form>
 
-            {/* New Nav Links (Popular, New, Tags) */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* Nav Links (Order 4 on mobile, 3 on desktop) - Removed "hidden" */}
+            <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start">
               <button
                 onClick={() => {
                   setSortBy('popular');
@@ -810,14 +854,14 @@ export default function Home() {
                   />
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Dropdown Menu - Responsive Width and Columns */}
                 {isCategoryDropdownOpen && (
                   <div
                     className={`absolute ${
-                      isRTL ? 'left-0' : 'right-0'
-                    } top-full mt-4 w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
+                      isRTL ? 'left-0 md:left-auto' : 'right-0'
+                    } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
                   >
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                       <button
                         onClick={() => handleCategoryClick('')}
                         className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
@@ -841,48 +885,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Language Switcher */}
-              <div className="relative">
-                <select
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value)}
-                  className={`w-full bg-white/10 border border-purple-500/30 rounded-lg font-semibold transition-all
-                           appearance-none cursor-pointer ${
-                             isRTL ? 'pr-10 pl-4' : 'pl-4 pr-10'
-                           } py-2 text-white
-                           focus:outline-none focus:border-purple-400`}
-                >
-                  <option value="en" className="bg-gray-800 text-white">
-                    EN
-                  </option>
-                  <option value="ar" className="bg-gray-800 text-white">
-                    AR
-                  </option>
-                  <option value="de" className="bg-gray-800 text-white">
-                    DE
-                  </option>
-                </select>
-                <ChevronDown
-                  className={`absolute top-2.5 ${
-                    isRTL ? 'left-3' : 'right-3'
-                  } w-5 h-5 text-gray-300 pointer-events-none`}
-                />
-              </div>
-
-              {/* Admin/Dashboard Button */}
-              <button
-                onClick={() => {
-                  setShowDashboard(true);
-                  setSelectedGame(null);
-                }}
-                title={t.dashboard} // Tooltip
-                className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
-              >
-                <LayoutDashboard className="w-5 h-5" />
-              </button>
             </div>
           </div>
         </div>
@@ -1687,3 +1689,4 @@ export default function Home() {
     </div>
   );
 }
+
