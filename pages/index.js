@@ -807,7 +807,10 @@ export default function Home() {
             </form>
 
             {/* Nav Links (Order 4 on mobile, 3 on desktop) - Removed "hidden" */}
-            <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start">
+            <div
+              className="relative flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start"
+              ref={categoryDropdownRef}
+            >
               <button
                 onClick={() => {
                   setSortBy('popular');
@@ -836,7 +839,7 @@ export default function Home() {
               </button>
 
               {/* Tags Dropdown */}
-              <div className="relative" ref={categoryDropdownRef}>
+              <div className="">
                 <button
                   onClick={() =>
                     setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
@@ -858,7 +861,7 @@ export default function Home() {
                 {isCategoryDropdownOpen && (
                   <div
                     className={`absolute ${
-                      isRTL ? 'left-0 md:left-auto' : 'right-0'
+                      isRTL ? 'left-0' : 'right-0'
                     } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
                   >
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
