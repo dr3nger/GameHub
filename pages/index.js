@@ -22,6 +22,14 @@ import {
   ChevronRight, // For Pagination
   ChevronsLeft, // For Pagination
   ChevronsRight, // For Pagination
+  Eye, // لعدد الزيارات
+  Settings, // لإعدادات الموقع
+  // MessageSquare, // تم الحذف
+  Send, // لـ Telegram
+  Youtube, // لـ YouTube
+  Twitter, // لـ Twitter (X)
+  Mail, // لـ Email
+  Star, // <<< تمت الإضافة: للتقييم
 } from 'lucide-react';
 
 const translations = {
@@ -72,6 +80,17 @@ const translations = {
     of: 'of', // For Pagination
     first: 'First', // For Pagination
     last: 'Last', // For Pagination
+    dashboardSearch: 'Search in dashboard...',
+    siteSettings: 'Site Settings',
+    redditLink: 'Reddit URL',
+    telegramLink: 'Telegram URL',
+    youtubeLink: 'YouTube URL',
+    twitterLink: 'Twitter (X) URL',
+    email: 'Email',
+    saved: 'Saved!', // تمت الإضافة
+    rating: 'Rating', // <<< تمت الإضافة
+    ratingCount: 'Rating Count', // <<< تمت الإضافة
+    ratings: 'ratings', // <<< تمت الإضافة
   },
   ar: {
     siteName: 'GameHub',
@@ -120,6 +139,17 @@ const translations = {
     of: 'من', // For Pagination
     first: 'الأولى', // For Pagination
     last: 'الأخيرة', // For Pagination
+    dashboardSearch: 'ابحث في لوحة التحكم...',
+    siteSettings: 'إعدادات الموقع',
+    redditLink: 'رابط Reddit',
+    telegramLink: 'رابط Telegram',
+    youtubeLink: 'رابط YouTube',
+    twitterLink: 'رابط Twitter (X)',
+    email: 'البريد الإلكتروني',
+    saved: 'تم الحفظ!', // تمت الإضافة
+    rating: 'التقييم', // <<< تمت الإضافة
+    ratingCount: 'عدد التقييمات', // <<< تمت الإضافة
+    ratings: 'تقييمات', // <<< تمت الإضافة
   },
   de: {
     siteName: 'SpielHub',
@@ -168,8 +198,44 @@ const translations = {
     of: 'von', // For Pagination
     first: 'Erste', // For Pagination
     last: 'Letzte', // For Pagination
+    dashboardSearch: 'In Dashboard suchen...',
+    siteSettings: 'Site-Einstellungen',
+    redditLink: 'Reddit-URL',
+    telegramLink: 'Telegram-URL',
+    youtubeLink: 'YouTube-URL',
+    twitterLink: 'Twitter (X)-URL',
+    email: 'Email',
+    saved: 'Gespeichert!', // تمت الإضافة
+    rating: 'Bewertung', // <<< تمت الإضافة
+    ratingCount: 'Anzahl Bewertungen', // <<< تمت الإضافة
+    ratings: 'Bewertungen', // <<< تمت الإضافة
   },
 };
+
+// <<< START SVG Icon for Reddit >>>
+// تم التغيير إلى حرف R بناءً على طلب المستخدم
+const RedditIcon = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <text
+      x="50%"
+      y="50%"
+      dominantBaseline="middle"
+      textAnchor="middle"
+      fontSize="14"
+      fontWeight="bold"
+      fill="currentColor"
+    >
+      R
+    </text>
+  </svg>
+);
+// <<< END SVG Icon for Reddit >>>
 
 const GAMES_PER_PAGE = 20;
 
@@ -315,6 +381,24 @@ export default function Home() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Dashboard Search
+  const [dashboardSearchQuery, setDashboardSearchQuery] = useState('');
+
+  // Site Settings
+  const [socialLinks, setSocialLinks] = useState({
+    reddit: '',
+    telegram: '',
+    youtube: '',
+    twitter: '',
+    email: '',
+  });
+  const [showSettingsSaved, setShowSettingsSaved] = useState(false); // تمت الإضافة
+
+  // <<< START Rating States >>>
+  const [hoverRating, setHoverRating] = useState(0);
+  const [userRating, setUserRating] = useState(null); // Stores the user's click
+  // <<< END Rating States >>>
+
   const [games, setGames] = useState([
     {
       id: 1,
@@ -333,6 +417,8 @@ export default function Home() {
       },
       visits: 1500,
       dateAdded: '2023-10-01T10:00:00Z',
+      rating: 4.5, // <<< تمت الإضافة
+      ratingCount: 120, // <<< تمت الإضافة
     },
     {
       id: 2,
@@ -350,6 +436,8 @@ export default function Home() {
       },
       visits: 2200,
       dateAdded: '2023-09-15T14:30:00Z',
+      rating: 4.2, // <<< تمت الإضافة
+      ratingCount: 85, // <<< تمت الإضافة
     },
     {
       id: 3,
@@ -364,6 +452,8 @@ export default function Home() {
       },
       visits: 800,
       dateAdded: '2023-10-05T12:00:00Z',
+      rating: 3.8, // <<< تمت الإضافة
+      ratingCount: 40, // <<< تمت الإضافة
     },
     // Add 18 more dummy games for pagination testing
     ...Array.from({ length: 18 }, (v, i) => ({
@@ -378,6 +468,8 @@ export default function Home() {
       },
       visits: Math.floor(Math.random() * 1000),
       dateAdded: `2023-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`,
+      rating: (Math.random() * 4 + 1).toFixed(1), // <<< تمت الإضافة
+      ratingCount: Math.floor(Math.random() * 100), // <<< تمت الإضافة
     })),
     {
       id: 22,
@@ -391,6 +483,8 @@ export default function Home() {
       },
       visits: 50,
       dateAdded: '2022-12-31T12:00:00Z',
+      rating: 3.0, // <<< تمت الإضافة
+      ratingCount: 10, // <<< تمت الإضافة
     },
   ]);
   const [editingGame, setEditingGame] = useState(null);
@@ -401,7 +495,9 @@ export default function Home() {
     image: '',
     screenshots: [],
     links: { windows: '', mac: '', linux: '', android: '' },
-    visits: 0,
+    visits: '', // تم التغيير من 0 إلى ''
+    rating: '', // <<< تمت الإضافة
+    ratingCount: '', // <<< تمت الإضافة
   });
   const [newCategory, setNewCategory] = useState('');
   const [editCategory, setEditCategory] = useState('');
@@ -611,6 +707,9 @@ export default function Home() {
           ...newGame,
           id: Date.now(),
           dateAdded: new Date().toISOString(),
+          visits: Number(newGame.visits) || 0, // التأكد من حفظه كرقم
+          rating: Number(newGame.rating) || 0, // <<< تمت الإضافة
+          ratingCount: Number(newGame.ratingCount) || 0, // <<< تمت الإضافة
         },
       ]);
       setNewGame({
@@ -620,7 +719,9 @@ export default function Home() {
         image: '',
         screenshots: [],
         links: { windows: '', mac: '', linux: '', android: '' },
-        visits: 0,
+        visits: '', // تم التغيير من 0 إلى ''
+        rating: '', // <<< تمت الإضافة
+        ratingCount: '', // <<< تمت الإضافة
       });
       setImageFile(null);
       setScreenshotFiles([]);
@@ -629,7 +730,14 @@ export default function Home() {
   };
 
   const handleUpdateGame = () => {
-    setGames(games.map((g) => (g.id === editingGame.id ? editingGame : g)));
+    // التأكد من حفظه كرقم
+    const updatedGame = {
+      ...editingGame,
+      visits: Number(editingGame.visits) || 0,
+      rating: Number(editingGame.rating) || 0, // <<< تمت الإضافة
+      ratingCount: Number(editingGame.ratingCount) || 0, // <<< تمت الإضافة
+    };
+    setGames(games.map((g) => (g.id === editingGame.id ? updatedGame : g)));
     setEditingGame(null);
     setEditCategory('');
   };
@@ -643,6 +751,8 @@ export default function Home() {
     setShowDashboard(false);
     setSearchResults(null);
     setSearchQuery('');
+    setUserRating(null); // <<< تمت الإضافة: إعادة تعيين تقييم المستخدم
+    setHoverRating(0); // <<< تمت الإضافة: إعادة تعيين النجوم
   };
 
   const handleGoBack = () => {
@@ -658,6 +768,7 @@ export default function Home() {
     // When filtering, also reset search
     setSearchResults(null);
     setSearchQuery('');
+    setSelectedGame(null); // *** تمت الإضافة: العودة للرئيسية ***
     // setCurrentPage(1); // Handled by useEffect
   };
 
@@ -673,6 +784,43 @@ export default function Home() {
       .slice(0, 5); // Show 5 related games
   };
   // --- End Related Games Logic ---
+
+  // --- Start Dashboard Filter Logic ---
+  const filteredDashboardGames = games.filter(
+    (game) =>
+      game.name.toLowerCase().includes(dashboardSearchQuery.toLowerCase()) ||
+      game.description.toLowerCase().includes(dashboardSearchQuery.toLowerCase())
+  );
+  // --- End Dashboard Filter Logic ---
+
+  // --- START RATING CLICK HANDLER ---
+  const handleRatingClick = (rate) => {
+    if (userRating || !selectedGame) return; // يمكن التقييم مرة واحدة فقط
+
+    // حساب المتوسط الجديد
+    const newTotalRating =
+      selectedGame.rating * selectedGame.ratingCount + rate;
+    const newRatingCount = selectedGame.ratingCount + 1;
+    const newAverage = newTotalRating / newRatingCount;
+
+    setUserRating(rate); // تخزين تقييم المستخدم الحالي
+
+    // تحديث قائمة الألعاب الرئيسية
+    const updatedGames = games.map((g) =>
+      g.id === selectedGame.id
+        ? { ...g, rating: newAverage, ratingCount: newRatingCount }
+        : g
+    );
+    setGames(updatedGames);
+
+    // تحديث اللعبة المحددة حالياً
+    setSelectedGame({
+      ...selectedGame,
+      rating: newAverage,
+      ratingCount: newRatingCount,
+    });
+  };
+  // --- END RATING CLICK HANDLER ---
 
   return (
     <div
@@ -694,8 +842,8 @@ export default function Home() {
                 setSearchResults(null);
                 setSearchQuery('');
                 setSuggestions([]);
-                setCategoryFilter('');
-                setSortBy('new');
+                // setCategoryFilter(''); // *** تم الحذف ***
+                // setSortBy('new'); // *** تم الحذف ***
                 setCurrentPage(1);
               }}
               className="flex items-center gap-3 order-1" // order-1
@@ -807,88 +955,94 @@ export default function Home() {
             </form>
 
             {/* Nav Links (Order 4 on mobile, 3 on desktop) - Removed "hidden" */}
-            <div
-              className="relative flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start"
-              ref={categoryDropdownRef}
-            >
-              <button
-                onClick={() => {
-                  setSortBy('popular');
-                  // setCurrentPage(1); // Handled by useEffect
-                }}
-                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
-                  sortBy === 'popular'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-300 hover:bg-white/20'
-                }`}
+            {/* *** تمت الإضافة: شرط الإخفاء *** */}
+            {!showDashboard && !selectedGame && (
+              <div
+                ref={categoryDropdownRef} // *** تم النقل إلى الحاوية ***
+                className="relative flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start"
               >
-                {t.popular}
-              </button>
-              <button
-                onClick={() => {
-                  setSortBy('new');
-                  // setCurrentPage(1); // Handled by useEffect
-                }}
-                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
-                  sortBy === 'new'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                {t.new}
-              </button>
-
-              {/* Tags Dropdown */}
-              <div className="">
                 <button
-                  onClick={() =>
-                    setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
-                  }
-                  className="flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold transition-all text-gray-300 hover:bg-white/20"
+                  onClick={() => {
+                    setSortBy('popular');
+                    // setCurrentPage(1); // Handled by useEffect
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
+                    sortBy === 'popular'
+                      ? 'bg-purple-600 text-white'
+                      : 'text-gray-300 hover:bg-white/20'
+                  }`}
                 >
-                  <span>
-                    {t.tags}
-                    {categoryFilter && `: ${categoryFilter}`}
-                  </span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      isCategoryDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
+                  {t.popular}
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy('new');
+                    // setCurrentPage(1); // Handled by useEffect
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
+                    sortBy === 'new'
+                      ? 'bg-purple-600 text-white'
+                      : 'text-gray-300 hover:bg-white/20'
+                  }`}
+                >
+                  {t.new}
                 </button>
 
-                {/* Dropdown Menu - Responsive Width and Columns */}
-                {isCategoryDropdownOpen && (
-                  <div
-                    className={`absolute ${
-                      isRTL ? 'left-0' : 'right-0'
-                    } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
+                {/* Tags Dropdown */}
+                <div className="relative">
+                  {' '}
+                  {/* *** تم حذف الـ ref من هنا *** */}
+                  <button
+                    onClick={() =>
+                      setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+                    }
+                    className="flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold transition-all text-gray-300 hover:bg-white/20"
                   >
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-                      <button
-                        onClick={() => handleCategoryClick('')}
-                        className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
-                          categoryFilter === '' ? 'bg-purple-600' : ''
-                        }`}
-                      >
-                        {t.allCategories}
-                      </button>
-                      {allCategories.map((category) => (
+                    <span>
+                      {t.tags}
+                      {categoryFilter && `: ${categoryFilter}`}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isCategoryDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {/* Dropdown Menu - Responsive Width and Columns */}
+                  {isCategoryDropdownOpen && (
+                    <div
+                      className={`absolute ${
+                        isRTL ? 'left-0' : 'right-0' // *** تم التعديل ***
+                      } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
+                    >
+                      <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                         <button
-                          key={category}
-                          onClick={() => handleCategoryClick(category)}
+                          onClick={() => handleCategoryClick('')}
                           className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
-                            categoryFilter === category ? 'bg-purple-600' : ''
+                            categoryFilter === '' ? 'bg-purple-600' : ''
                           }`}
                         >
-                          {category}
+                          {t.allCategories}
                         </button>
-                      ))}
+                        {allCategories.map((category) => (
+                          <button
+                            key={category}
+                            onClick={() => handleCategoryClick(category)}
+                            className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
+                              categoryFilter === category
+                                ? 'bg-purple-600'
+                                : ''
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </header>
@@ -953,6 +1107,26 @@ export default function Home() {
                           )}
                         </div>
                       </div>
+                      {/* <<< START RATING DISPLAY (GRID) >>> */}
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < Math.round(game.rating)
+                                  ? 'text-yellow-400'
+                                  : 'text-gray-600'
+                              }`}
+                              fill="currentColor"
+                            />
+                          ))}
+                        </div>
+                        <span>
+                          ({game.ratingCount})
+                        </span>
+                      </div>
+                      {/* <<< END RATING DISPLAY (GRID) >>> */}
                     </div>
                   </div>
                 ))
@@ -1005,15 +1179,59 @@ export default function Home() {
                   {selectedGame.name}
                 </h1>
                 <div className="flex flex-wrap gap-2 mb-4">
+                  {/* *** تم التعديل هنا إلى button *** */}
                   {selectedGame.categories.map((cat) => (
-                    <span
+                    <button
                       key={cat}
-                      className="inline-block px-3 py-1 bg-purple-600/30 text-purple-300 rounded-full text-sm"
+                      onClick={() => handleCategoryClick(cat)}
+                      className="inline-block px-3 py-1 bg-purple-600/30 text-purple-300 rounded-full text-sm hover:bg-purple-600 hover:text-white transition-all"
                     >
                       {cat}
-                    </span>
+                    </button>
                   ))}
                 </div>
+                {/* *** تم إضافة عدد الزيارات هنا *** */}
+                <div className="flex items-center gap-2 text-gray-400 mb-4">
+                  <Eye className="w-5 h-5" />
+                  <span>{selectedGame.visits}</span>
+                </div>
+
+                {/* <<< START INTERACTIVE RATING >>> */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => {
+                      const rate = i + 1;
+                      return (
+                        <Star
+                          key={i}
+                          className={`w-6 h-6 transition-colors ${
+                            rate <= (hoverRating || Math.round(userRating || selectedGame.rating))
+                              ? 'text-yellow-400'
+                              : 'text-gray-600'
+                          } ${
+                            !userRating
+                              ? 'cursor-pointer hover:text-yellow-300'
+                              : 'cursor-default'
+                          }`}
+                          fill="currentColor"
+                          onMouseEnter={() => !userRating && setHoverRating(rate)}
+                          onMouseLeave={() => !userRating && setHoverRating(0)}
+                          onClick={() => handleRatingClick(rate)}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="text-gray-400 text-sm">
+                    <span>
+                      {selectedGame.rating.toFixed(1)} / 5
+                    </span>
+                    <span className="mx-2">|</span>
+                    <span>
+                      ({selectedGame.ratingCount} {t.ratings})
+                    </span>
+                  </div>
+                </div>
+                {/* <<< END INTERACTIVE RATING >>> */}
               </div>
             </div>
 
@@ -1164,6 +1382,26 @@ export default function Home() {
                             )}
                           </div>
                         </div>
+                        {/* <<< START RATING DISPLAY (RELATED) >>> */}
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < Math.round(game.rating)
+                                    ? 'text-yellow-400'
+                                    : 'text-gray-600'
+                                }`}
+                                fill="currentColor"
+                              />
+                            ))}
+                          </div>
+                          <span>
+                            ({game.ratingCount})
+                          </span>
+                        </div>
+                        {/* <<< END RATING DISPLAY (RELATED) >>> */}
                       </div>
                     </div>
                   ))}
@@ -1205,19 +1443,52 @@ export default function Home() {
                     {t.visits}
                   </label>
                   <input
-                    type="number"
+                    type="text" // تم التغيير من number إلى text
                     placeholder={t.visits}
                     value={newGame.visits}
                     onChange={(e) =>
                       setNewGame({
                         ...newGame,
-                        visits: parseInt(e.target.value) || 0,
+                        visits: e.target.value, // تم التعديل
                       })
                     }
                     className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
                                     placeholder-gray-400 focus:outline-none focus:border-purple-400"
                   />
                 </div>
+
+                {/* <<< START RATING INPUTS (ADD) >>> */}
+                <div className="md:col-span-1">
+                  <label className="block mb-2 text-gray-300 text-sm">
+                    {t.rating} (0-5)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={t.rating}
+                    value={newGame.rating}
+                    onChange={(e) =>
+                      setNewGame({ ...newGame, rating: e.target.value })
+                    }
+                    className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
+                                    placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block mb-2 text-gray-300 text-sm">
+                    {t.ratingCount}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={t.ratingCount}
+                    value={newGame.ratingCount}
+                    onChange={(e) =>
+                      setNewGame({ ...newGame, ratingCount: e.target.value })
+                    }
+                    className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
+                                    placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+                {/* <<< END RATING INPUTS (ADD) >>> */}
 
                 {/* Categories Input */}
                 <div className="md:col-span-2">
@@ -1392,55 +1663,196 @@ export default function Home() {
               </button>
             </div>
 
+            {/* === START SITE SETTINGS === */}
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <Settings className="w-6 h-6" />
+                {t.siteSettings}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder={t.telegramLink}
+                  value={socialLinks.telegram}
+                  onChange={(e) =>
+                    setSocialLinks({
+                      ...socialLinks,
+                      telegram: e.target.value,
+                    })
+                  }
+                  className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                />
+                <input
+                  type="text"
+                  placeholder={t.redditLink}
+                  value={socialLinks.reddit}
+                  onChange={(e) =>
+                    setSocialLinks({ ...socialLinks, reddit: e.target.value })
+                  }
+                  className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                />
+                <input
+                  type="text"
+                  placeholder={t.youtubeLink}
+                  value={socialLinks.youtube}
+                  onChange={(e) =>
+                    setSocialLinks({ ...socialLinks, youtube: e.target.value })
+                  }
+                  className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                />
+                <input
+                  type="text"
+                  placeholder={t.twitterLink}
+                  value={socialLinks.twitter}
+                  onChange={(e) =>
+                    setSocialLinks({ ...socialLinks, twitter: e.target.value })
+                  }
+                  className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                />
+                <input
+                  type="email"
+                  placeholder={t.email}
+                  value={socialLinks.email}
+                  onChange={(e) =>
+                    setSocialLinks({ ...socialLinks, email: e.target.value })
+                  }
+                  className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                />
+              </div>
+              {/* === START SAVE BUTTON === */}
+              <div className="flex items-center gap-4 mt-4">
+                <button
+                  onClick={() => {
+                    // In a real app, this would save to a DB
+                    console.log('Settings saved:', socialLinks);
+                    setShowSettingsSaved(true);
+                    setTimeout(() => setShowSettingsSaved(false), 2000);
+                  }}
+                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  <Save className="w-4 h-4" />
+                  {t.save}
+                </button>
+                {showSettingsSaved && (
+                  <span className="text-green-400">{t.saved}</span>
+                )}
+              </div>
+              {/* === END SAVE BUTTON === */}
+            </div>
+            {/* === END SITE SETTINGS === */}
+
             {/* Games List */}
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                {t.dashboard}
-              </h2>
+              {/* *** تم تعديل هذا السطر لإضافة البحث *** */}
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h2 className="text-2xl font-bold text-white">
+                  {t.dashboard}
+                </h2>
+                <div className="relative flex-1 min-w-[250px]">
+                  <Search
+                    className={`absolute top-3 ${
+                      isRTL ? 'right-3' : 'left-3'
+                    } w-5 h-5 text-gray-400`}
+                  />
+                  <input
+                    type="text"
+                    placeholder={t.dashboardSearch}
+                    value={dashboardSearchQuery}
+                    onChange={(e) => setDashboardSearchQuery(e.target.value)}
+                    className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
+                      isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'
+                    } py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400`}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-4">
-                {games.map((game) => (
+                {/* *** تم التعديل لاستخدام القائمة المفلترة *** */}
+                {filteredDashboardGames.map((game) => (
                   <div
                     key={game.id}
                     className="bg-white/5 rounded-lg p-4 border border-purple-500/20"
                   >
                     {editingGame?.id === game.id ? (
                       <div className="space-y-3">
-                        {/* Edit Game Name Input */}
-                        <div className="md:col-span-1">
-                          <label className="block mb-2 text-gray-300 text-sm">
-                            {t.gameName}
-                          </label>
-                          <input
-                            type="text"
-                            value={editingGame.name}
-                            onChange={(e) =>
-                              setEditingGame({
-                                ...editingGame,
-                                name: e.target.value,
-                              })
-                            }
-                            className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
-                            placeholder={t.gameName}
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Edit Game Name Input */}
+                          <div className="md:col-span-1">
+                            <label className="block mb-2 text-gray-300 text-sm">
+                              {t.gameName}
+                            </label>
+                            <input
+                              type="text"
+                              value={editingGame.name}
+                              onChange={(e) =>
+                                setEditingGame({
+                                  ...editingGame,
+                                  name: e.target.value,
+                                })
+                              }
+                              className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                              placeholder={t.gameName}
+                            />
+                          </div>
+                          {/* Edit Visits Input */}
+                          <div className="md:col-span-1">
+                            <label className="block mb-2 text-gray-300 text-sm">
+                              {t.visits}
+                            </label>
+                            <input
+                              type="text" // تم التغيير من number
+                              value={editingGame.visits}
+                              onChange={(e) =>
+                                setEditingGame({
+                                  ...editingGame,
+                                  visits: e.target.value, // تم التعديل
+                                })
+                              }
+                              className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                              placeholder={t.visits}
+                            />
+                          </div>
+                          {/* <<< START RATING INPUTS (EDIT) >>> */}
+                          <div className="md:col-span-1">
+                            <label className="block mb-2 text-gray-300 text-sm">
+                              {t.rating} (0-5)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder={t.rating}
+                              value={editingGame.rating}
+                              onChange={(e) =>
+                                setEditingGame({
+                                  ...editingGame,
+                                  rating: e.target.value,
+                                })
+                              }
+                              className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
+                                    placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                            />
+                          </div>
+                          <div className="md:col-span-1">
+                            <label className="block mb-2 text-gray-300 text-sm">
+                              {t.ratingCount}
+                            </label>
+                            <input
+                              type="text"
+                              placeholder={t.ratingCount}
+                              value={editingGame.ratingCount}
+                              onChange={(e) =>
+                                setEditingGame({
+                                  ...editingGame,
+                                  ratingCount: e.target.value,
+                                })
+                              }
+                              className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
+                                    placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                            />
+                          </div>
+                          {/* <<< END RATING INPUTS (EDIT) >>> */}
                         </div>
-                        {/* Edit Visits Input */}
-                        <div className="md:col-span-1">
-                          <label className="block mb-2 text-gray-300 text-sm">
-                            {t.visits}
-                          </label>
-                          <input
-                            type="number"
-                            value={editingGame.visits}
-                            onChange={(e) =>
-                              setEditingGame({
-                                ...editingGame,
-                                visits: parseInt(e.target.value) || 0,
-                              })
-                            }
-                            className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
-                            placeholder={t.visits}
-                          />
-                        </div>
+
+                        {/* *** تم إصلاح الكود هنا *** */}
                         <textarea
                           rows="3"
                           value={editingGame.description}
@@ -1689,6 +2101,67 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* === START FOOTER === */}
+      <footer className="container mx-auto px-4 py-8 mt-12 border-t border-purple-500/20">
+        <div className="flex items-center justify-center gap-6">
+          {socialLinks.telegram && (
+            <a
+              href={socialLinks.telegram}
+              title="Telegram"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white"
+            >
+              <Send className="w-6 h-6" />
+            </a>
+          )}
+          {socialLinks.reddit && (
+            <a
+              href={socialLinks.reddit}
+              title="Reddit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white"
+            >
+              {/* تم تغيير الأيقونة */}
+              <RedditIcon className="w-6 h-6" />
+            </a>
+          )}
+          {socialLinks.youtube && (
+            <a
+              href={socialLinks.youtube}
+              title="YouTube"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white"
+            >
+              <Youtube className="w-6 h-6" />
+            </a>
+          )}
+          {socialLinks.twitter && (
+            <a
+              href={socialLinks.twitter}
+              title="Twitter (X)"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white"
+            >
+              <Twitter className="w-6 h-6" />
+            </a>
+          )}
+          {socialLinks.email && (
+            <a
+              href={`mailto:${socialLinks.email}`}
+              title="Email"
+              className="text-gray-400 hover:text-white"
+            >
+              <Mail className="w-6 h-6" />
+            </a>
+          )}
+        </div>
+      </footer>
+      {/* === END FOOTER === */}
     </div>
   );
 }
