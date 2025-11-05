@@ -1522,8 +1522,9 @@ export default function Home() {
                   </button>
                   {isCategoryDropdownOpen && (
                     <div
-                      className={`absolute ${
-                        isRTL ? 'left-0' : 'right-0'
+                      // --- ⭐️ هذا هو التعديل الخاص بتوسيط القائمة ⭐️ ---
+                      className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
+                        isRTL ? 'md:left-0' : 'md:right-0'
                       } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
                     >
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
