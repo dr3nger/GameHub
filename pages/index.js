@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 // استيراد Supabase
-import { supabase } from '../utils/supabaseClient'; // <-- المسار الصحيح
+import { supabase } from '@/utils/supabaseClient'; // <-- ⭐️ تم تعديل المسار هنا
 // استيراد UUID
 import { v4 as uuidv4 } from 'uuid';
 
