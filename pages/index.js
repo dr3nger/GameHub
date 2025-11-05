@@ -109,9 +109,9 @@ const translations = {
     password: 'Password',
     loginError: 'Login failed. Check email or password.',
     loggingIn: 'Logging in...',
-    supportedLanguages: 'Supported Languages', // <-- جديد
-    addLanguage: 'Add language (press Enter)', // <-- جديد
-    addLanguageBtn: 'Add Language', // <-- جديد
+    supportedLanguages: 'Supported Languages',
+    addLanguage: 'Add language (press Enter)',
+    addLanguageBtn: 'Add Language',
   },
   ar: {
     siteName: 'GameHub',
@@ -180,9 +180,9 @@ const translations = {
     password: 'كلمة المرور',
     loginError: 'فشل الدخول. تأكد من البريد أو كلمة المرور.',
     loggingIn: 'جاري الدخول...',
-    supportedLanguages: 'اللغات المدعومة', // <-- جديد
-    addLanguage: 'أضف لغة (اضغط Enter)', // <-- جديد
-    addLanguageBtn: 'إضافة لغة', // <-- جديد
+    supportedLanguages: 'اللغات المدعومة',
+    addLanguage: 'أضف لغة (اضغط Enter)',
+    addLanguageBtn: 'إضافة لغة',
   },
   de: {
     siteName: 'SpielHub',
@@ -251,9 +251,9 @@ const translations = {
     password: 'Passwort',
     loginError: 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.',
     loggingIn: 'Anmelden...',
-    supportedLanguages: 'Unterstützte Sprachen', // <-- جديد
-    addLanguage: 'Sprache hinzufügen (Enter)', // <-- جديد
-    addLanguageBtn: 'Sprache hinzufügen', // <-- جديد
+    supportedLanguages: 'Unterstützte Sprachen',
+    addLanguage: 'Sprache hinzufügen (Enter)',
+    addLanguageBtn: 'Sprache hinzufügen',
   },
 };
 // ... (أيقونة Reddit و Pagination لا يتغير) ...
@@ -534,15 +534,18 @@ export default function Home() {
 
   const [isClient, setIsClient] = useState(false);
 
-  const selectedGameRef = useRef(selectedGame);
+  // --- ⭐️ بداية إصلاح زر الرجوع (Refs) ⭐️ ---
+  // نستخدم Refs لتخزين أحدث قيمة للحالة ليستخدمها مستمع popstate
+  const allGamesRef = useRef(allGames);
   useEffect(() => {
-    selectedGameRef.current = selectedGame;
-  }, [selectedGame]);
+    allGamesRef.current = allGames;
+  }, [allGames]);
 
-  const showDashboardRef = useRef(showDashboard);
+  const userRef = useRef(user);
   useEffect(() => {
-    showDashboardRef.current = showDashboard;
-  }, [showDashboard]);
+    userRef.current = user;
+  }, [user]);
+  // --- ⭐️ نهاية إصلاح زر الرجوع (Refs) ⭐️ ---
 
   const [imageFile, setImageFile] = useState(null);
   const [screenshotFiles, setScreenshotFiles] = useState([]);
@@ -566,20 +569,80 @@ export default function Home() {
     setCurrentPage(1);
   }, [sortBy, categoryFilter, searchResults]);
 
+  // --- ⭐️ بداية إصلاح زر الرجوع (المستمع) ⭐️ ---
   useEffect(() => {
-    const handleBrowserBack = (event) => {
-      if (showLogin) {
+    // 1. تعيين الحالة الأولية عند تحميل الصفحة
+    // نستخدم replaceState لتجنب "صفحة فارغة" عند الضغط على "رجوع" في البداية
+    window.history.replaceState({ view: 'home', category: '' }, '');
+
+    // 2. مستمع حدث الرجوع
+    const handlePopState = (event) => {
+      const state = event.state;
+
+      if (!state) {
+        // كحل احتياطي، العودة للرئيسية
         setShowLogin(false);
-      } else if (selectedGameRef.current) {
         setSelectedGame(null);
-      } else if (showDashboardRef.current) {
         setShowDashboard(false);
+        setCategoryFilter('');
+        return;
+      }
+
+      // التبديل بناءً على الحالة التي نعود إليها
+      switch (state.view) {
+        case 'game':
+          // نستخدم allGamesRef للوصول إلى أحدث قائمة ألعاب
+          const gameToView = allGamesRef.current.find(
+            (g) => g.id === state.gameId
+          );
+          if (gameToView) {
+            setSelectedGame(gameToView);
+            setShowDashboard(false);
+            setShowLogin(false);
+          } else {
+            // إذا لم نجد اللعبة (بيانات قديمة؟)، نعود للرئيسية
+            setSelectedGame(null);
+            setShowDashboard(false);
+            setShowLogin(false);
+            setCategoryFilter('');
+          }
+          break;
+        case 'dashboard':
+          // نستخدم userRef للتحقق من أن المستخدم لا يزال مسجلاً دخوله
+          if (userRef.current) {
+            setSelectedGame(null);
+            setShowDashboard(true);
+            setShowLogin(false);
+          } else {
+            // إذا سجل المستخدم الخروج، لا يمكنه العودة للداشبورد
+            setSelectedGame(null);
+            setShowDashboard(false);
+            setShowLogin(false);
+            setCategoryFilter('');
+            // تصحيح الهيستوري
+            window.history.replaceState({ view: 'home', category: '' }, '');
+          }
+          break;
+        case 'login':
+          setSelectedGame(null);
+          setShowDashboard(false);
+          setShowLogin(true);
+          break;
+        case 'home':
+        default:
+          setSelectedGame(null);
+          setShowDashboard(false);
+          setShowLogin(false);
+          setCategoryFilter(state.category || '');
+          break;
       }
     };
 
-    window.addEventListener('popstate', handleBrowserBack);
-    return () => window.removeEventListener('popstate', handleBrowserBack);
-  }, [showLogin]); // <-- إضافة showLogin هنا
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []); // <-- المصفوفة الفارغة هامة جداً لضمان تشغيل هذا مرة واحدة فقط
+  // --- ⭐️ نهاية إصلاح زر الرجوع (المستمع) ⭐️ ---
+
 
   // --- 🔐 جلب البيانات وفحص المصادقة ---
   useEffect(() => {
@@ -613,8 +676,12 @@ export default function Home() {
 
       if (gamesError) throw gamesError;
       setGames(gamesData || []);
-      setAllGames(gamesData || []);
+      setAllGames(gamesData || []); // <-- هذا سيقوم بتشغيل الـ Ref
+    } catch (error) {
+      console.error('Error fetching games:', error.message);
+    }
 
+    try {
       // 2. جلب الإعدادات
       const { data: settingsData, error: settingsError } = await supabase
         .from('site_settings')
@@ -622,12 +689,16 @@ export default function Home() {
         .eq('id', 1)
         .single();
 
-      // (لا حاجة لرمي خطأ إذا لم يتم العثور على الإعدادات، خاصة مع RLS)
+      if (settingsError && settingsError.code !== 'PGRST116') {
+        // PGRST116 = "النتيجة لا تحتوي على أي صفوف" (وهذا طبيعي إذا لم يتم إدخال الإعدادات بعد)
+        throw settingsError;
+      }
+      
       if (settingsData) {
         setSocialLinks(settingsData.social_links);
       }
     } catch (error) {
-      console.error('Error fetching data from Supabase:', error.message);
+      console.error('Error fetching settings:', error.message);
     } finally {
       setLoading(false);
     }
@@ -648,7 +719,8 @@ export default function Home() {
       // سيتم تحديث 'user' بواسطة onAuthStateChange
       setShowLogin(false);
       setShowDashboard(true); // <-- فتح لوحة التحكم بعد نجاح الدخول
-      window.history.pushState({ view: 'dashboard' }, '');
+      // ⭐️ إصلاح الهيستوري: استبدال 'login' بـ 'dashboard'
+      window.history.replaceState({ view: 'dashboard' }, '');
     }
     setIsLoggingIn(false);
   };
@@ -657,17 +729,20 @@ export default function Home() {
     await supabase.auth.signOut();
     setUser(null);
     setShowDashboard(false); // <-- إخفاء لوحة التحكم عند الخروج
-    window.history.pushState({ view: 'home' }, '');
+    // ⭐️ إصلاح الهيستوري: إضافة حالة 'home'
+    window.history.pushState({ view: 'home', category: '' }, '');
   };
 
   const handleDashboardClick = () => {
     if (user) {
       setShowDashboard(true);
       setSelectedGame(null);
+      // ⭐️ إصلاح الهيستوري: إضافة حالة 'dashboard'
       window.history.pushState({ view: 'dashboard' }, '');
     } else {
       setLoginError(null);
       setShowLogin(true); // <-- إظهار نافذة تسجيل الدخول
+      // ⭐️ إصلاح الهيستوري: إضافة حالة 'login'
       window.history.pushState({ view: 'login' }, '');
     }
   };
@@ -853,7 +928,8 @@ export default function Home() {
     setSuggestions([]);
     setShowDashboard(false);
     setSelectedGame(null);
-    window.history.pushState({ view: 'home' }, '');
+    // ⭐️ إصلاح الهيستوري: إضافة حالة 'home'
+    window.history.pushState({ view: 'home', category: '' }, '');
   };
 
   const handleSuggestionClick = (game) => {
@@ -863,7 +939,8 @@ export default function Home() {
     setSuggestions([]);
     setShowDashboard(false);
     setSelectedGame(null);
-    window.history.pushState({ view: 'home' }, '');
+    // ⭐️ إصلاح الهيستوري: إضافة حالة 'home'
+    window.history.pushState({ view: 'home', category: '' }, '');
   };
   // --- End Search Logic ---
 
@@ -959,7 +1036,7 @@ export default function Home() {
         links: newGame.links,
         visits: Number(newGame.visits) || 0,
         rating: Number(newGame.rating) || 0,
-        rating_count: Number(newGame.ratingCount) || 0, // <-- ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+        rating_count: Number(newGame.ratingCount) || 0, // <-- ⭐️ تم الإصلاح
         image: imageUrl,
         screenshots: screenshotUrls.filter((url) => url !== null),
       };
@@ -1013,7 +1090,7 @@ export default function Home() {
       links: editingGame.links,
       visits: Number(editingGame.visits) || 0,
       rating: Number(editingGame.rating) || 0,
-      rating_count: Number(editingGame.rating_count) || 0, // <-- ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ (استخدام الاسم الصحيح)
+      rating_count: Number(editingGame.rating_count) || 0, // <-- ⭐️ تم الإصلاح
       // (تعديل الصور يتطلب منطقاً إضافياً)
     };
 
@@ -1071,7 +1148,7 @@ export default function Home() {
   const handleRatingClick = async (rate) => {
     if (userRating || !selectedGame) return;
     
-    // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ (يجب استخدام rating_count من قاعدة البيانات)
+    // ⭐️ تم الإصلاح (يجب استخدام rating_count من قاعدة البيانات)
     const currentRatingCount = selectedGame.rating_count || 0;
     const currentRating = selectedGame.rating || 0;
 
@@ -1086,7 +1163,7 @@ export default function Home() {
     const updatedGame = {
       ...selectedGame,
       rating: newAverage,
-      rating_count: newRatingCount, // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+      rating_count: newRatingCount, // ⭐️ تم الإصلاح
     };
     setSelectedGame(updatedGame);
     setGames(games.map((g) => (g.id === selectedGame.id ? updatedGame : g)));
@@ -1097,7 +1174,7 @@ export default function Home() {
     // إرسال التحديث إلى Supabase
     const { error } = await supabase
       .from('games')
-      .update({ rating: newAverage, rating_count: newRatingCount }) // <-- ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+      .update({ rating: newAverage, rating_count: newRatingCount }) // <-- ⭐️ تم الإصلاح
       .eq('id', selectedGame.id);
 
     if (error) {
@@ -1106,7 +1183,8 @@ export default function Home() {
     }
   };
 
-  // ... (الدوال المتبقية: handleSelectGame, handleGoBack, handleCategoryClick, getRelatedGames, formatters لا تتغير) ...
+  // --- ⭐️ إصلاح الهيستوري: تعديل دوال التنقل ---
+
   const handleSelectGame = (game) => {
     setSelectedGame(game);
     setShowDashboard(false);
@@ -1114,10 +1192,11 @@ export default function Home() {
     setSearchQuery('');
     setUserRating(null);
     setHoverRating(0);
-    window.history.pushState({ view: 'game' }, '');
+    window.history.pushState({ view: 'game', gameId: game.id }, '');
   };
 
   const handleGoBack = () => {
+    // هذه الدالة الآن تشغل مستمع 'popstate'
     window.history.back();
   };
 
@@ -1127,10 +1206,12 @@ export default function Home() {
     setSearchResults(null);
     setSearchQuery('');
     setSelectedGame(null);
-    window.history.pushState({ view: 'home' }, '');
+    window.history.pushState({ view: 'home', category: category }, '');
     // إرجاع الألعاب إلى القائمة الكاملة عند الفلترة
     setGames(allGames);
   };
+  
+  // (بقية الدوال المساعدة لا تتغير)
 
   const getRelatedGames = () => {
     if (!selectedGame) return [];
@@ -1202,7 +1283,7 @@ export default function Home() {
           isRTL={isRTL}
           onLogin={handleLogin}
           onCancel={() => {
-            setShowLogin(false);
+            // ⭐️ إصلاح الهيستوري: استخدام window.history.back()
             window.history.back();
           }}
           loginError={loginError}
@@ -1222,7 +1303,9 @@ export default function Home() {
                 setSearchQuery('');
                 setSuggestions([]);
                 setCurrentPage(1);
-                window.history.pushState({ view: 'home' }, '');
+                setCategoryFilter(''); // ⭐️ إصلاح الهيستوري: تنظيف الفلتر
+                // ⭐️ إصلاح الهيستوري: إضافة حالة 'home'
+                window.history.pushState({ view: 'home', category: '' }, '');
                 setGames(allGames); // <-- إرجاع القائمة الكاملة
               }}
               className="flex items-center gap-3 order-1"
@@ -1504,7 +1587,7 @@ export default function Home() {
                             />
                           ))}
                         </div>
-                        {/* ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ */}
+                        {/* ⭐️ تم الإصلاح */}
                         <span>({game.rating_count || 0})</span>
                       </div>
                     </div>
@@ -1626,7 +1709,7 @@ export default function Home() {
                     <span>{selectedGame.rating.toFixed(1)} / 5</span>
                     <span className="mx-2">|</span>
                     <span>
-                      {/* ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ */}
+                      {/* ⭐️ تم الإصلاح */}
                       ({selectedGame.rating_count || 0} {t.ratings})
                     </span>
                   </div>
@@ -1792,7 +1875,7 @@ export default function Home() {
                               />
                             ))}
                           </div>
-                           {/* ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ */}
+                           {/* ⭐️ تم الإصلاح */}
                           <span>({game.rating_count || 0})</span>
                         </div>
                       </div>
@@ -2283,12 +2366,12 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder={t.ratingCount}
-                              // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+                              // ⭐️ تم الإصلاح
                               value={editingGame.rating_count} 
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
-                                  rating_count: e.target.value, // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+                                  rating_count: e.target.value, 
                                 })
                               }
                               className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
@@ -2533,8 +2616,7 @@ export default function Home() {
                         <div className="flex gap-2 flex-shrink-0">
                           <button
                             onClick={() => {
-                              // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
-                              // التأكد من أن حالة التعديل تستخدم rating_count
+                              // ⭐️ تم الإصلاح
                               setEditingGame({
                                 ...game,
                                 ratingCount: game.rating_count || 0,
