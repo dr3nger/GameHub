@@ -535,7 +535,6 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
 
   // --- ⭐️ بداية إصلاح زر الرجوع (Refs) ⭐️ ---
-  // نستخدم Refs لتخزين أحدث قيمة للحالة ليستخدمها مستمع popstate
   const allGamesRef = useRef(allGames);
   useEffect(() => {
     allGamesRef.current = allGames;
@@ -1298,7 +1297,8 @@ export default function Home() {
     return `mailto:${email}`;
   };
 
-  // --- ⭐️ شاشة التحميل (معدلة) ⭐️ ---
+  // --- شاشة التحميل ---
+  // (تم تعديلها لتشمل loadingAuth)
   if (!isClient || loadingAuth || (loading && games.length === 0 && !user)) {
     return (
       <div
@@ -1307,14 +1307,8 @@ export default function Home() {
         } flex flex-col items-center justify-center text-white`}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
-        {/* --- ⭐️ بداية التعديل: استبدال الأيقونة بالشعار ⭐️ --- */}
-        <div className="flex items-center gap-3 animate-pulse">
-          <Gamepad2 className="w-12 h-12 text-purple-400" />
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-            {t.siteName}
-          </h1>
-        </div>
-        {/* --- ⭐️ نهاية التعديل ⭐️ --- */}
+        <Loader2 className="w-16 h-16 text-purple-400 animate-spin mb-4" />
+        <h1 className="text-2xl font-semibold">{t.loadingGames}</h1>
       </div>
     );
   }
