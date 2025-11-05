@@ -30,9 +30,9 @@ import {
   Mail,
   Star,
   Loader2,
-  User, // <-- أيقونة جديدة
-  LogOut, // <-- أيقونة جديدة
-  LogIn, // <-- أيقونة جديدة
+  User,
+  LogOut,
+  LogIn,
 } from 'lucide-react';
 
 // استيراد Supabase
@@ -103,12 +103,15 @@ const translations = {
     ratings: 'ratings',
     uploading: 'Uploading...',
     loadingGames: 'Loading games...',
-    login: 'Login', // <-- جديد
-    logout: 'Logout', // <-- جديد
-    adminLogin: 'Admin Login', // <-- جديد
-    password: 'Password', // <-- جديد
-    loginError: 'Login failed. Check email or password.', // <-- جديد
-    loggingIn: 'Logging in...', // <-- جديد
+    login: 'Login',
+    logout: 'Logout',
+    adminLogin: 'Admin Login',
+    password: 'Password',
+    loginError: 'Login failed. Check email or password.',
+    loggingIn: 'Logging in...',
+    supportedLanguages: 'Supported Languages', // <-- جديد
+    addLanguage: 'Add language (press Enter)', // <-- جديد
+    addLanguageBtn: 'Add Language', // <-- جديد
   },
   ar: {
     siteName: 'GameHub',
@@ -171,12 +174,15 @@ const translations = {
     ratings: 'تقييمات',
     uploading: 'جاري الرفع...',
     loadingGames: 'جاري تحميل الألعاب...',
-    login: 'تسجيل الدخول', // <-- جديد
-    logout: 'تسجيل الخروج', // <-- جديد
-    adminLogin: 'دخول المدير', // <-- جديد
-    password: 'كلمة المرور', // <-- جديد
-    loginError: 'فشل الدخول. تأكد من البريد أو كلمة المرور.', // <-- جديد
-    loggingIn: 'جاري الدخول...', // <-- جديد
+    login: 'تسجيل الدخول',
+    logout: 'تسجيل الخروج',
+    adminLogin: 'دخول المدير',
+    password: 'كلمة المرور',
+    loginError: 'فشل الدخول. تأكد من البريد أو كلمة المرور.',
+    loggingIn: 'جاري الدخول...',
+    supportedLanguages: 'اللغات المدعومة', // <-- جديد
+    addLanguage: 'أضف لغة (اضغط Enter)', // <-- جديد
+    addLanguageBtn: 'إضافة لغة', // <-- جديد
   },
   de: {
     siteName: 'SpielHub',
@@ -239,12 +245,15 @@ const translations = {
     ratings: 'Bewertungen',
     uploading: 'Lädt hoch...',
     loadingGames: 'Lade Spiele...',
-    login: 'Anmelden', // <-- جديد
-    logout: 'Abmelden', // <-- جديد
-    adminLogin: 'Admin-Anmeldung', // <-- جديد
-    password: 'Passwort', // <-- جديد
-    loginError: 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.', // <-- جديد
-    loggingIn: 'Anmelden...', // <-- جديد
+    login: 'Anmelden',
+    logout: 'Abmelden',
+    adminLogin: 'Admin-Anmeldung',
+    password: 'Passwort',
+    loginError: 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.',
+    loggingIn: 'Anmelden...',
+    supportedLanguages: 'Unterstützte Sprachen', // <-- جديد
+    addLanguage: 'Sprache hinzufügen (Enter)', // <-- جديد
+    addLanguageBtn: 'Sprache hinzufügen', // <-- جديد
   },
 };
 // ... (أيقونة Reddit و Pagination لا يتغير) ...
@@ -727,7 +736,46 @@ export default function Home() {
   const t = translations[lang];
   const isRTL = lang === 'ar';
 
-  // ... (منطق إضافة/إزالة التصنيف لا يتغير) ...
+  // --- 🌍 بداية منطق اللغات 🌍 ---
+  const handleAddLanguage = (target = 'new') => {
+    const language = (target === 'new' ? newLanguage : editLanguage)
+      .trim()
+      .toLowerCase();
+    if (language) {
+      if (target === 'new' && !newGame.languages.includes(language)) {
+        setNewGame({
+          ...newGame,
+          languages: [...newGame.languages, language],
+        });
+        setNewLanguage('');
+      } else if (
+        target === 'edit' &&
+        !editingGame.languages.includes(language)
+      ) {
+        setEditingGame({
+          ...editingGame,
+          languages: [...editingGame.languages, language],
+        });
+        setEditLanguage('');
+      }
+    }
+  };
+
+  const handleRemoveLanguage = (langToRemove, target = 'new') => {
+    if (target === 'new') {
+      setNewGame({
+        ...newGame,
+        languages: newGame.languages.filter((l) => l !== langToRemove),
+      });
+    } else {
+      setEditingGame({
+        ...editingGame,
+        languages: editingGame.languages.filter((l) => l !== langToRemove),
+      });
+    }
+  };
+  // --- 🌍 نهاية منطق اللغات 🌍 ---
+
   // --- Start Category Logic ---
   const handleAddCategory = (target = 'new') => {
     const category = (target === 'new' ? newCategory : editCategory)
@@ -869,6 +917,7 @@ export default function Home() {
     name: '',
     description: '',
     categories: [],
+    languages: [], // <-- 🌍 جديد
     image: '',
     screenshots: [],
     links: { windows: '', mac: '', linux: '', android: '' },
@@ -878,6 +927,8 @@ export default function Home() {
   });
   const [newCategory, setNewCategory] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [newLanguage, setNewLanguage] = useState(''); // <-- 🌍 جديد
+  const [editLanguage, setEditLanguage] = useState(''); // <-- 🌍 جديد
 
   const handleAddGame = async () => {
     if (!newGame.name || !newGame.description) {
@@ -904,6 +955,7 @@ export default function Home() {
         name: newGame.name,
         description: newGame.description,
         categories: newGame.categories,
+        languages: newGame.languages, // <-- 🌍 جديد
         links: newGame.links,
         visits: Number(newGame.visits) || 0,
         rating: Number(newGame.rating) || 0,
@@ -930,6 +982,7 @@ export default function Home() {
         name: '',
         description: '',
         categories: [],
+        languages: [], // <-- 🌍 جديد
         image: '',
         screenshots: [],
         links: { windows: '', mac: '', linux: '', android: '' },
@@ -940,6 +993,7 @@ export default function Home() {
       setImageFile(null);
       setScreenshotFiles([]);
       setNewCategory('');
+      setNewLanguage(''); // <-- 🌍 جديد
     } catch (error) {
       console.error('Error adding game:', error.message);
       alert('Failed to add game: ' + error.message);
@@ -955,6 +1009,7 @@ export default function Home() {
       name: editingGame.name,
       description: editingGame.description,
       categories: editingGame.categories,
+      languages: editingGame.languages, // <-- 🌍 جديد
       links: editingGame.links,
       visits: Number(editingGame.visits) || 0,
       rating: Number(editingGame.rating) || 0,
@@ -980,6 +1035,7 @@ export default function Home() {
     );
     setEditingGame(null);
     setEditCategory('');
+    setEditLanguage(''); // <-- 🌍 جديد
   };
 
   // --- SUPABASE: تعديل دالة حذف لعبة ---
@@ -1465,7 +1521,7 @@ export default function Home() {
             />
           </>
         ) : !showDashboard && selectedGame ? (
-          /* Game Detail View (لا يتغير) */
+          /* 🌍 Game Detail View (معدل لإظهار اللغات) 🌍 */
           <div className="text-white">
             <button
               onClick={handleGoBack}
@@ -1506,6 +1562,28 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+
+                {/* --- 🌍 بداية قسم اللغات 🌍 --- */}
+                {selectedGame.languages &&
+                  selectedGame.languages.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        {t.supportedLanguages}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {(selectedGame.languages || []).map((lang) => (
+                          <span
+                            key={lang}
+                            className="inline-block px-3 py-1 bg-gray-600/30 text-gray-300 rounded-full text-sm"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                {/* --- 🌍 نهاية قسم اللغات 🌍 --- */}
+
                 <div className="flex items-center gap-2 text-gray-400 mb-4">
                   <Eye className="w-5 h-5" />
                   <span>{selectedGame.visits}</span>
@@ -1718,8 +1796,7 @@ export default function Home() {
             )}
           </div>
         ) : (
-          /* Dashboard View (محمي الآن) */
-          /* (يتم عرضه فقط إذا user === true و showDashboard === true) */
+          /* 🌍 Dashboard View (معدل لإضافة اللغات) 🌍 */
           <div className="space-y-6">
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
@@ -1842,6 +1919,58 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
+
+                {/* --- 🌍 بداية قسم إضافة اللغات 🌍 --- */}
+                <div className="md:col-span-2">
+                  <label className="block mb-2 text-gray-300 text-sm">
+                    {t.supportedLanguages}
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {newGame.languages.map((lang) => (
+                      <span
+                        key={lang}
+                        className="flex items-center gap-1 px-3 py-1 bg-gray-600/30 text-gray-300 rounded-full text-xs"
+                      >
+                        {lang}
+                        <button
+                          onClick={() => handleRemoveLanguage(lang, 'new')}
+                          className="text-gray-300 hover:text-white"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={t.addLanguage}
+                      value={newLanguage}
+                      onChange={(e) => setNewLanguage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddLanguage('new');
+                        }
+                      }}
+                      className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
+                        isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4'
+                      } py-2 text-white
+                                    placeholder-gray-400 focus:outline-none focus:border-purple-400`}
+                    />
+                    <button
+                      type="button"
+                      title={t.addLanguageBtn}
+                      onClick={() => handleAddLanguage('new')}
+                      className={`absolute top-1/2 -translate-y-1/2 ${
+                        isRTL ? 'left-2' : 'right-2'
+                      } p-1.5 text-gray-400 hover:text-white bg-purple-600/50 hover:bg-purple-600 rounded-md`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                {/* --- 🌍 نهاية قسم إضافة اللغات 🌍 --- */}
 
                 <textarea
                   rows="3"
@@ -2224,6 +2353,62 @@ export default function Home() {
                             </button>
                           </div>
                         </div>
+
+                        {/* --- 🌍 بداية قسم تعديل اللغات 🌍 --- */}
+                        <div>
+                          <label className="block mb-2 text-gray-300 text-sm">
+                            {t.supportedLanguages}
+                          </label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {(editingGame.languages || []).map((lang) => (
+                              <span
+                                key={lang}
+                                className="flex items-center gap-1 px-3 py-1 bg-gray-600/30 text-gray-300 rounded-full text-xs"
+                              >
+                                {lang}
+                                <button
+                                  onClick={() =>
+                                    handleRemoveLanguage(lang, 'edit')
+                                  }
+                                  className="text-gray-300 hover:text-white"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder={t.addLanguage}
+                              value={editLanguage}
+                              onChange={(e) =>
+                                setEditLanguage(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddLanguage('edit');
+                                }
+                              }}
+                              className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
+                                isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4'
+                              } py-2 text-white
+                                            placeholder-gray-400 focus:outline-none focus:border-purple-400`}
+                            />
+                            <button
+                              type="button"
+                              title={t.addLanguageBtn}
+                              onClick={() => handleAddLanguage('edit')}
+                              className={`absolute top-1/2 -translate-y-1/2 ${
+                                isRTL ? 'left-2' : 'right-2'
+                              } p-1.5 text-gray-400 hover:text-white bg-purple-600/50 hover:bg-purple-600 rounded-md`}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        {/* --- 🌍 نهاية قسم تعديل اللغات 🌍 --- */}
 
                         {/* (تعديل الصور هنا - تم تخطيه للتبسيط) */}
 
