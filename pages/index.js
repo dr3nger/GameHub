@@ -1,4 +1,3 @@
-```react:صفحة التطبيق الرئيسية (النسخة الآمنة):pages/index.js
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -2425,4 +2424,3 @@ export default function Home() {
     </div>
   );
 }
-```eof
