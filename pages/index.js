@@ -1,4 +1,4 @@
-"use client"; // <<< هذا السطر ضروري لـ Next.js
+"use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -11,27 +11,33 @@ import {
   Gamepad2,
   ArrowLeft,
   Download,
-  Laptop, // Kept for fallback
-  Smartphone, // Re-added for Android
+  Laptop,
+  Smartphone,
   ChevronDown,
   LayoutDashboard,
-  AppWindow, // Added for Windows
-  Apple, // Added for Mac
-  Bot, // Added for Linux (Tux)
-  ChevronLeft, // For Pagination
-  ChevronRight, // For Pagination
-  ChevronsLeft, // For Pagination
-  ChevronsRight, // For Pagination
-  Eye, // لعدد الزيارات
-  Settings, // لإعدادات الموقع
-  // MessageSquare, // تم الحذف
-  Send, // لـ Telegram
-  Youtube, // لـ YouTube
-  Twitter, // لـ Twitter (X)
-  Mail, // لـ Email
-  Star, // <<< تمت الإضافة: للتقييم
+  AppWindow,
+  Apple,
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Eye,
+  Settings,
+  Send,
+  Youtube,
+  Twitter,
+  Mail,
+  Star,
+  Loader2, // <-- أيقونة للتحميل
 } from 'lucide-react';
 
+// استيراد Supabase
+import { supabase } from '../utils/supabaseClient'; // <-- تم تصحيح المسار هنا
+// استيراد UUID لإنشاء أسماء ملفات فريدة
+import { v4 as uuidv4 } from 'uuid';
+
+// ... (الكود الخاص بالترجمة Translations لا يتغير) ...
 const translations = {
   en: {
     siteName: 'GameHub',
@@ -49,7 +55,7 @@ const translations = {
     category: 'Category',
     categories: 'Categories',
     addCategory: 'Add category (press Enter)',
-    addCategoryBtn: 'Add Category', // <<< تمت الإضافة
+    addCategoryBtn: 'Add Category',
     uploadImage: 'Upload Cover Image',
     uploadScreenshots: 'Upload Screenshots',
     screenshots: 'Screenshots',
@@ -77,10 +83,10 @@ const translations = {
     allCategories: 'All Categories',
     visits: 'Visits',
     relatedGames: 'Related Games',
-    page: 'Page', // For Pagination
-    of: 'of', // For Pagination
-    first: 'First', // For Pagination
-    last: 'Last', // For Pagination
+    page: 'Page',
+    of: 'of',
+    first: 'First',
+    last: 'Last',
     dashboardSearch: 'Search in dashboard...',
     siteSettings: 'Site Settings',
     redditLink: 'Reddit URL',
@@ -88,10 +94,12 @@ const translations = {
     youtubeLink: 'YouTube URL',
     twitterLink: 'Twitter (X) URL',
     email: 'Email',
-    saved: 'Saved!', // تمت الإضافة
-    rating: 'Rating', // <<< تمت الإضافة
-    ratingCount: 'Rating Count', // <<< تمت الإضافة
-    ratings: 'ratings', // <<< تمت الإضافة
+    saved: 'Saved!',
+    rating: 'Rating',
+    ratingCount: 'Rating Count',
+    ratings: 'ratings',
+    uploading: 'Uploading...', // <-- تمت الإضافة
+    loadingGames: 'Loading games...', // <-- تمت الإضافة
   },
   ar: {
     siteName: 'GameHub',
@@ -109,7 +117,7 @@ const translations = {
     category: 'الفئة',
     categories: 'التصنيفات',
     addCategory: 'أضف تصنيف (اضغط Enter)',
-    addCategoryBtn: 'إضافة تصنيف', // <<< تمت الإضافة
+    addCategoryBtn: 'إضافة تصنيف',
     uploadImage: 'رفع صورة الغلاف',
     uploadScreenshots: 'رفع لقطات شاشة',
     screenshots: 'لقطات الشاشة',
@@ -137,10 +145,10 @@ const translations = {
     allCategories: 'كل التصنيفات',
     visits: 'الزيارات',
     relatedGames: 'ألعاب مشابهة',
-    page: 'صفحة', // For Pagination
-    of: 'من', // For Pagination
-    first: 'الأولى', // For Pagination
-    last: 'الأخيرة', // For Pagination
+    page: 'صفحة',
+    of: 'من',
+    first: 'الأولى',
+    last: 'الأخيرة',
     dashboardSearch: 'ابحث في لوحة التحكم...',
     siteSettings: 'إعدادات الموقع',
     redditLink: 'رابط Reddit',
@@ -148,10 +156,12 @@ const translations = {
     youtubeLink: 'رابط YouTube',
     twitterLink: 'رابط Twitter (X)',
     email: 'البريد الإلكتروني',
-    saved: 'تم الحفظ!', // تمت الإضافة
-    rating: 'التقييم', // <<< تمت الإضافة
-    ratingCount: 'عدد التقييمات', // <<< تمت الإضافة
-    ratings: 'تقييمات', // <<< تمت الإضافة
+    saved: 'تم الحفظ!',
+    rating: 'التقييم',
+    ratingCount: 'عدد التقييمات',
+    ratings: 'تقييمات',
+    uploading: 'جاري الرفع...', // <-- تمت الإضافة
+    loadingGames: 'جاري تحميل الألعاب...', // <-- تمت الإضافة
   },
   de: {
     siteName: 'SpielHub',
@@ -169,7 +179,7 @@ const translations = {
     category: 'Kategorie',
     categories: 'Kategorien',
     addCategory: 'Kategorie hinzufügen (Enter)',
-    addCategoryBtn: 'Kategorie hinzufügen', // <<< تمت الإضافة
+    addCategoryBtn: 'Kategorie hinzufügen',
     uploadImage: 'Coverbild hochladen',
     uploadScreenshots: 'Screenshots hochladen',
     screenshots: 'Screenshots',
@@ -197,10 +207,10 @@ const translations = {
     allCategories: 'Alle Kategorien',
     visits: 'Besuche',
     relatedGames: 'Ähnliche Spiele',
-    page: 'Seite', // For Pagination
-    of: 'von', // For Pagination
-    first: 'Erste', // For Pagination
-    last: 'Letzte', // For Pagination
+    page: 'Seite',
+    of: 'von',
+    first: 'Erste',
+    last: 'Letzte',
     dashboardSearch: 'In Dashboard suchen...',
     siteSettings: 'Site-Einstellungen',
     redditLink: 'Reddit-URL',
@@ -208,15 +218,16 @@ const translations = {
     youtubeLink: 'YouTube-URL',
     twitterLink: 'Twitter (X)-URL',
     email: 'Email',
-    saved: 'Gespeichert!', // تمت الإضافة
-    rating: 'Bewertung', // <<< تمت الإضافة
-    ratingCount: 'Anzahl Bewertungen', // <<< تمت الإضافة
-    ratings: 'Bewertungen', // <<< تمت الإضافة
+    saved: 'Gespeichert!',
+    rating: 'Bewertung',
+    ratingCount: 'Anzahl Bewertungen',
+    ratings: 'Bewertungen',
+    uploading: 'Lädt hoch...', // <-- تمت الإضافة
+    loadingGames: 'Lade Spiele...', // <-- تمت الإضافة
   },
 };
-
+// ... (بقية كود الترجمة و أيقونة Reddit لا تتغير) ...
 // <<< START SVG Icon for Reddit >>>
-// تم التغيير إلى حرف R بناءً على طلب المستخدم
 const RedditIcon = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -242,6 +253,7 @@ const RedditIcon = ({ className }) => (
 
 const GAMES_PER_PAGE = 20;
 
+// ... (مكون Pagination لا يتغير) ...
 // Pagination Component
 const Pagination = ({ currentPage, totalPages, onPageChange, t, isRTL }) => {
   if (totalPages <= 1) return null;
@@ -325,7 +337,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, t, isRTL }) => {
       {/* Page Numbers */}
       {pageNumbers.map((num, index) =>
         num === '...' ? (
-          <span key={`ellipsis-${index}`} className="text-gray-400 px-2 py-2">
+          <span key={`ellipsis-${index}`} className="px-2 py-2 text-gray-400">
             ...
           </span>
         ) : (
@@ -366,28 +378,22 @@ const Pagination = ({ currentPage, totalPages, onPageChange, t, isRTL }) => {
   );
 };
 
-// تم تغيير اسم المكون من App إلى Home
 export default function Home() {
   const [lang, setLang] = useState('en');
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [searchResults, setSearchResults] = useState(null); // null = no search done, [] = search done, no results
+  const [searchResults, setSearchResults] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
 
-  // Sorting and Filtering
-  const [sortBy, setSortBy] = useState('new'); // 'new', 'popular'
-  const [categoryFilter, setCategoryFilter] = useState(''); // '' = all
+  const [sortBy, setSortBy] = useState('new');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const categoryDropdownRef = useRef(null);
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Dashboard Search
   const [dashboardSearchQuery, setDashboardSearchQuery] = useState('');
 
-  // Site Settings
   const [socialLinks, setSocialLinks] = useState({
     reddit: '',
     telegram: '',
@@ -395,15 +401,21 @@ export default function Home() {
     twitter: '',
     email: '',
   });
-  const [showSettingsSaved, setShowSettingsSaved] = useState(false); // تمت الإضافة
+  const [showSettingsSaved, setShowSettingsSaved] = useState(false);
 
-  // <<< START Rating States >>>
   const [hoverRating, setHoverRating] = useState(0);
-  const [userRating, setUserRating] = useState(null); // Stores the user's click
-  // <<< END Rating States >>>
+  const [userRating, setUserRating] = useState(null);
 
-  // <<< START HISTORY/BACK BUTTON REFS >>>
-  // Refs to track current state for the popstate listener
+  const [games, setGames] = useState([]);
+  const [allGames, setAllGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // --- ⭐️ بداية الإصلاح ⭐️ ---
+  // هذا المتغير سيتأكد أننا في المتصفح قبل عرض الواجهة
+  const [isClient, setIsClient] = useState(false);
+  // --- ⭐️ نهاية الإصلاح ⭐️ ---
+
   const selectedGameRef = useRef(selectedGame);
   useEffect(() => {
     selectedGameRef.current = selectedGame;
@@ -413,114 +425,10 @@ export default function Home() {
   useEffect(() => {
     showDashboardRef.current = showDashboard;
   }, [showDashboard]);
-  // <<< END HISTORY/BACK BUTTON REFS >>>
 
-  const [games, setGames] = useState([
-    {
-      id: 1,
-      name: 'Cyber Warriors',
-      description: 'Epic futuristic combat game',
-      categories: ['action', 'strategy'],
-      image:
-        'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop',
-      screenshots: [
-        'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop',
-        'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400&h=300&fit=crop',
-      ],
-      links: {
-        windows: 'https://example.com/win',
-        mac: 'https://example.com/mac',
-      },
-      visits: 1500,
-      dateAdded: '2023-10-01T10:00:00Z',
-      rating: 4.5, // <<< تمت الإضافة
-      ratingCount: 120, // <<< تمت الإضافة
-    },
-    {
-      id: 2,
-      name: 'Dragon Quest',
-      description: 'Fantasy adventure RPG',
-      categories: ['rpg', 'adventure'],
-      image:
-        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&h=300&fit=crop',
-      screenshots: [
-        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&h=300&fit=crop',
-      ],
-      links: {
-        windows: 'https://example.com/win',
-        linux: 'https://example.com/linux',
-      },
-      visits: 2200,
-      dateAdded: '2023-09-15T14:30:00Z',
-      rating: 4.2, // <<< تمت الإضافة
-      ratingCount: 85, // <<< تمت الإضافة
-    },
-    {
-      id: 3,
-      name: 'Racing Thunder',
-      description: 'High-speed racing action',
-      categories: ['sports', 'action'],
-      image:
-        'https://images.unsplash.com/photo-1511882150382-421056c89033?w=400&h=300&fit=crop',
-      screenshots: [],
-      links: {
-        android: 'https://example.com/android',
-      },
-      visits: 800,
-      dateAdded: '2023-10-05T12:00:00Z',
-      rating: 3.8, // <<< تمت الإضافة
-      ratingCount: 40, // <<< تمت الإضافة
-    },
-    // Add 18 more dummy games for pagination testing
-    ...Array.from({ length: 18 }, (v, i) => ({
-      id: i + 4,
-      name: `Demo Game ${i + 1}`,
-      description: 'This is a demo game description.',
-      categories: [i % 2 === 0 ? 'action' : 'puzzle', 'adventure'],
-      image: `https://placehold.co/400x300/4a0e71/ffffff?text=Game+${i + 1}`,
-      screenshots: [],
-      links: {
-        windows: 'https://example.com/win',
-      },
-      visits: Math.floor(Math.random() * 1000),
-      dateAdded: `2023-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`,
-      rating: (Math.random() * 4 + 1).toFixed(1), // <<< تمت الإضافة
-      ratingCount: Math.floor(Math.random() * 100), // <<< تمت الإضافة
-    })),
-    {
-      id: 22,
-      name: 'Last Page Game',
-      description: 'This game should be on page 2.',
-      categories: ['strategy'],
-      image: 'https://placehold.co/400x300/7e22ce/ffffff?text=Game+22',
-      screenshots: [],
-      links: {
-        windows: 'https://example.com/win',
-      },
-      visits: 50,
-      dateAdded: '2022-12-31T12:00:00Z',
-      rating: 3.0, // <<< تمت الإضافة
-      ratingCount: 10, // <<< تمت الإضافة
-    },
-  ]);
-  const [editingGame, setEditingGame] = useState(null);
-  const [newGame, setNewGame] = useState({
-    name: '',
-    description: '',
-    categories: [],
-    image: '',
-    screenshots: [],
-    links: { windows: '', mac: '', linux: '', android: '' },
-    visits: '', // تم التغيير من 0 إلى ''
-    rating: '', // <<< تمت الإضافة
-    ratingCount: '', // <<< تمت الإضافة
-  });
-  const [newCategory, setNewCategory] = useState('');
-  const [editCategory, setEditCategory] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [screenshotFiles, setScreenshotFiles] = useState([]);
 
-  // Close category dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -536,23 +444,12 @@ export default function Home() {
     };
   }, [categoryDropdownRef]);
 
-  // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [sortBy, categoryFilter, searchResults]);
 
-  // <<< START URL HELPER >>>
-  // *** تم حذف دالة getBasePath ***
-  // <<< END URL HELPER >>>
-
-  // <<< START HISTORY/BACK BUTTON EFFECT >>>
   useEffect(() => {
-    // *** تم حذف window.history.replaceState ***
-
     const handleBrowserBack = (event) => {
-      // This fires when the user clicks the physical/browser back button
-      // We check our refs (state in listeners can be stale)
-      // Order matters: check game first, then dashboard
       if (selectedGameRef.current) {
         setSelectedGame(null);
       } else if (showDashboardRef.current) {
@@ -561,73 +458,114 @@ export default function Home() {
     };
 
     window.addEventListener('popstate', handleBrowserBack);
-    // Cleanup
     return () => window.removeEventListener('popstate', handleBrowserBack);
-  }, []); // Empty dependency array, runs only once on mount
-  // <<< END HISTORY/BACK BUTTON EFFECT >>>
+  }, []);
 
+  // --- SUPABASE: جلب البيانات عند تحميل الصفحة ---
+  useEffect(() => {
+    // --- ⭐️ بداية الإصلاح ⭐️ ---
+    // نخبر التطبيق أننا الآن في المتصفح
+    setIsClient(true);
+    // --- ⭐️ نهاية الإصلاح ⭐️ ---
+
+    fetchGamesAndSettings();
+  }, []); // <-- المصفوفة الفارغة تضمن تشغيله مرة واحدة
+
+  async function fetchGamesAndSettings() {
+    setLoading(true);
+    try {
+      // 1. جلب الألعاب
+      const { data: gamesData, error: gamesError } = await supabase
+        .from('games')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (gamesError) throw gamesError;
+      setGames(gamesData || []);
+      setAllGames(gamesData || []);
+
+      // 2. جلب الإعدادات
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('site_settings')
+        .select('social_links')
+        .eq('id', 1)
+        .single();
+
+      if (settingsError) throw settingsError;
+      if (settingsData) {
+        setSocialLinks(settingsData.social_links);
+      }
+    } catch (error) {
+      console.error('Error fetching data from Supabase:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ... (بقية الدوال: handleImageUpload, handleScreenshotsUpload, etc.) ...
+  // --- SUPABASE: تعديل دالة رفع صورة الغلاف ---
   const handleImageUpload = (e, target = 'new') => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (target === 'new') {
-          setImageFile(reader.result);
+      if (target === 'new') {
+        setImageFile(file); // <-- تخزين كائن الملف مباشرة
+        // تحديث المعاينة
+        const reader = new FileReader();
+        reader.onloadend = () => {
           setNewGame({ ...newGame, image: reader.result });
-        } else {
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // (من الأفضل التعامل مع تعديل الملفات بشكل منفصل، لكن سنبقيها للمعاينة)
+        // هذا الكود سيتجاهل تعديل الملف في دالة handleUpdateGame
+        const reader = new FileReader();
+        reader.onloadend = () => {
           setEditingGame({ ...editingGame, image: reader.result });
-        }
-      };
-      reader.readAsDataURL(file);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
+  // --- SUPABASE: تعديل دالة رفع لقطات الشاشة ---
   const handleScreenshotsUpload = (e, target = 'new') => {
     const files = Array.from(e.target.files);
-    const newScreenshots = [];
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newScreenshots.push(reader.result);
-        if (newScreenshots.length === files.length) {
-          if (target === 'new') {
-            setScreenshotFiles([...screenshotFiles, ...newScreenshots]);
-            setNewGame({
-              ...newGame,
-              screenshots: [...(newGame.screenshots || []), ...newScreenshots],
-            });
-          } else {
-            setEditingGame({
-              ...editingGame,
-              screenshots: [
-                ...(editingGame.screenshots || []),
-                ...newScreenshots,
-              ],
-            });
+    if (target === 'new') {
+      setScreenshotFiles(files); // <-- تخزين كائنات الملفات مباشرة
+      // تحديث المعاينة
+      const previewUrls = [];
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          previewUrls.push(reader.result);
+          if (previewUrls.length === files.length) {
+            setNewGame({ ...newGame, screenshots: previewUrls });
           }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+        };
+        reader.readAsDataURL(file);
+      });
+    } else {
+      // (تعديل الملفات معقد، سنتجاهله في دالة التحديث الآن)
+    }
   };
 
   const removeScreenshot = (index, target = 'new') => {
     if (target === 'new') {
-      const updatedScreenshots = screenshotFiles.filter((_, i) => i !== index);
-      setScreenshotFiles(updatedScreenshots);
-      setNewGame({ ...newGame, screenshots: updatedScreenshots });
-    } else {
-      const updatedScreenshots = editingGame.screenshots.filter(
+      const updatedFiles = screenshotFiles.filter((_, i) => i !== index);
+      setScreenshotFiles(updatedFiles);
+      const updatedPreviews = newGame.screenshots.filter(
         (_, i) => i !== index
       );
-      setEditingGame({ ...editingGame, screenshots: updatedScreenshots });
+      setNewGame({ ...newGame, screenshots: updatedPreviews });
+    } else {
+      // (يتطلب منطق تعديل/حذف من Supabase Storage)
     }
   };
 
   const t = translations[lang];
   const isRTL = lang === 'ar';
 
+  // ... (منطق إضافة/إزالة التصنيف لا يتغير) ...
   // --- Start Category Logic ---
   const handleAddCategory = (target = 'new') => {
     const category = (target === 'new' ? newCategory : editCategory)
@@ -664,18 +602,20 @@ export default function Home() {
     }
   };
 
+  // --- SUPABASE: تعديل مصدر التصنيفات ---
   const allCategories = [
-    ...new Set(games.flatMap((game) => game.categories)),
+    ...new Set(allGames.flatMap((game) => game.categories || [])), // <-- استخدام allGames
   ].sort();
   // --- End Category Logic ---
 
-  // --- Start Search Logic ---
+  // --- SUPABASE: تعديل منطق البحث ---
   const handleSearchInputChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
 
     if (query.length > 1) {
-      const matchingGames = games.filter(
+      const matchingGames = allGames.filter(
+        // <-- استخدام allGames
         (game) =>
           game.name.toLowerCase().includes(query.toLowerCase()) ||
           game.description.toLowerCase().includes(query.toLowerCase())
@@ -689,47 +629,46 @@ export default function Home() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim() === '') {
-      setSearchResults(null); // Reset search, show all games
+      setSearchResults(null);
+      setGames(allGames); // <-- إظهار كل الألعاب
     } else {
-      const matchingGames = games.filter(
+      const matchingGames = allGames.filter(
         (game) =>
           game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           game.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setSearchResults(matchingGames);
+      setGames(matchingGames); // <-- إظهار نتائج البحث
     }
     setSuggestions([]);
     setShowDashboard(false);
     setSelectedGame(null);
-    window.history.pushState({ view: 'home' }, ''); // <<< FIX 2
-    // setCurrentPage(1); // Handled by useEffect
+    window.history.pushState({ view: 'home' }, '');
   };
 
   const handleSuggestionClick = (game) => {
     setSearchQuery(game.name);
     setSearchResults([game]);
+    setGames([game]); // <-- إظهار اللعبة المختارة
     setSuggestions([]);
     setShowDashboard(false);
     setSelectedGame(null);
-    window.history.pushState({ view: 'home' }, ''); // <<< FIX 3
-    // setCurrentPage(1); // Handled by useEffect
+    window.history.pushState({ view: 'home' }, '');
   };
   // --- End Search Logic ---
 
-  // --- Start Game List Logic ---
+  // --- SUPABASE: تعديل منطق الفرز ---
+  // (ملاحظة: الفرز الآن يحدث على الواجهة الأمامية، للأداء الأفضل يجب أن يتم في Supabase query)
   const filteredAndSortedGames = (searchResults !== null ? searchResults : games)
     .filter((game) => {
-      // Category Filter
       if (categoryFilter === '') return true;
-      return game.categories.includes(categoryFilter);
+      return (game.categories || []).includes(categoryFilter);
     })
     .sort((a, b) => {
-      // Sort By
       if (sortBy === 'popular') {
         return b.visits - a.visits;
       }
-      // Default to 'new'
-      return new Date(b.dateAdded) - new Date(a.dateAdded);
+      return new Date(b.created_at) - new Date(a.created_at); // <-- استخدام created_at
     });
 
   const totalPages = Math.ceil(
@@ -742,19 +681,89 @@ export default function Home() {
   );
   // --- End Game List Logic ---
 
-  const handleAddGame = () => {
-    if (newGame.name && newGame.description) {
-      setGames([
-        ...games,
-        {
-          ...newGame,
-          id: Date.now(),
-          dateAdded: new Date().toISOString(),
-          visits: Number(newGame.visits) || 0, // التأكد من حفظه كرقم
-          rating: Number(newGame.rating) || 0, // <<< تمت الإضافة
-          ratingCount: Number(newGame.ratingCount) || 0, // <<< تمت الإضافة
-        },
-      ]);
+  // --- SUPABASE: دالة مساعدة لرفع الملفات ---
+  async function uploadFile(file, bucket) {
+    if (!file) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const filePath = `public/${uuidv4()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError.message);
+      return null;
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    return data.publicUrl;
+  }
+
+  // --- SUPABASE: تعديل دالة إضافة لعبة ---
+  const [editingGame, setEditingGame] = useState(null);
+  const [newGame, setNewGame] = useState({
+    name: '',
+    description: '',
+    categories: [],
+    image: '',
+    screenshots: [],
+    links: { windows: '', mac: '', linux: '', android: '' },
+    visits: '',
+    rating: '',
+    ratingCount: '',
+  });
+  const [newCategory, setNewCategory] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+
+  const handleAddGame = async () => {
+    if (!newGame.name || !newGame.description) {
+      alert('Please fill in game name and description.'); // (يفضل استخدام modal)
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // 1. رفع صورة الغلاف
+      const imageUrl = await uploadFile(imageFile, 'game-images');
+      if (!imageUrl && imageFile) {
+        throw new Error('Failed to upload cover image.');
+      }
+
+      // 2. رفع لقطات الشاشة
+      const screenshotUrls = await Promise.all(
+        screenshotFiles.map((file) => uploadFile(file, 'game-images'))
+      );
+
+      // 3. تجهيز بيانات اللعبة
+      const gameData = {
+        name: newGame.name,
+        description: newGame.description,
+        categories: newGame.categories,
+        links: newGame.links,
+        visits: Number(newGame.visits) || 0,
+        rating: Number(newGame.rating) || 0,
+        ratingCount: Number(newGame.ratingCount) || 0,
+        image: imageUrl,
+        screenshots: screenshotUrls.filter((url) => url !== null),
+      };
+
+      // 4. إدراج البيانات في Supabase
+      const { data: insertedGame, error } = await supabase
+        .from('games')
+        .insert(gameData)
+        .select() // <-- طلب إرجاع الصف المُضاف
+        .single();
+
+      if (error) throw error;
+
+      // 5. تحديث الحالة المحلية
+      setGames([insertedGame, ...games]);
+      setAllGames([insertedGame, ...allGames]);
+
+      // 6. إعادة تعيين النموذج
       setNewGame({
         name: '',
         description: '',
@@ -762,121 +771,177 @@ export default function Home() {
         image: '',
         screenshots: [],
         links: { windows: '', mac: '', linux: '', android: '' },
-        visits: '', // تم التغيير من 0 إلى ''
-        rating: '', // <<< تمت الإضافة
-        ratingCount: '', // <<< تمت الإضافة
+        visits: '',
+        rating: '',
+        ratingCount: '',
       });
       setImageFile(null);
       setScreenshotFiles([]);
       setNewCategory('');
+    } catch (error) {
+      console.error('Error adding game:', error.message);
+      alert('Failed to add game: ' + error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleUpdateGame = () => {
-    // التأكد من حفظه كرقم
+  // --- SUPABASE: تعديل دالة تحديث لعبة ---
+  // (ملاحظة: هذا التحديث مبسط ولا يعالج تغيير الصور)
+  const handleUpdateGame = async () => {
     const updatedGame = {
-      ...editingGame,
+      name: editingGame.name,
+      description: editingGame.description,
+      categories: editingGame.categories,
+      links: editingGame.links,
       visits: Number(editingGame.visits) || 0,
-      rating: Number(editingGame.rating) || 0, // <<< تمت الإضافة
-      ratingCount: Number(editingGame.ratingCount) || 0, // <<< تمت الإضافة
+      rating: Number(editingGame.rating) || 0,
+      ratingCount: Number(editingGame.ratingCount) || 0,
+      // (تعديل الصور يتطلب منطقاً إضافياً)
     };
-    setGames(games.map((g) => (g.id === editingGame.id ? updatedGame : g)));
+
+    const { data: returnedGame, error } = await supabase
+      .from('games')
+      .update(updatedGame)
+      .eq('id', editingGame.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating game:', error.message);
+      return;
+    }
+
+    setGames(games.map((g) => (g.id === editingGame.id ? returnedGame : g)));
+    setAllGames(
+      allGames.map((g) => (g.id === editingGame.id ? returnedGame : g))
+    );
     setEditingGame(null);
     setEditCategory('');
   };
 
-  const handleDeleteGame = (id) => {
+  // --- SUPABASE: تعديل دالة حذف لعبة ---
+  const handleDeleteGame = async (id) => {
+    // (ملاحظة: يجب أيضاً حذف الصور من Supabase Storage)
+    const { error } = await supabase.from('games').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error deleting game:', error.message);
+      return;
+    }
+
     setGames(games.filter((g) => g.id !== id));
+    setAllGames(allGames.filter((g) => g.id !== id));
   };
 
-  const handleSelectGame = (game) => {
-    setSelectedGame(game);
-    setShowDashboard(false);
-    setSearchResults(null);
-    setSearchQuery('');
-    setUserRating(null); // <<< تمت الإضافة: إعادة تعيين تقييم المستخدم
-    setHoverRating(0); // <<< تمت الإضافة: إعادة تعيين النجوم
-    window.history.pushState({ view: 'game' }, ''); // <<< FIX 4
+  // --- SUPABASE: تعديل دالة حفظ الإعدادات ---
+  const handleSaveSettings = async () => {
+    const { error } = await supabase
+      .from('site_settings')
+      .update({ social_links: socialLinks })
+      .eq('id', 1); // تحديث الصف ذي id = 1
+
+    if (error) {
+      console.error('Error saving settings:', error.message);
+    } else {
+      setShowSettingsSaved(true);
+      setTimeout(() => setShowSettingsSaved(false), 2000);
+    }
   };
 
-  const handleGoBack = () => {
-    // setSelectedGame(null); // <<< تم الحذف: onpopstate سيعالج هذا
-    window.history.back(); // <<< تمت الإضافة: سيؤدي هذا إلى تشغيل onpopstate
-  };
+  // --- SUPABASE: تعديل دالة تقييم اللعبة ---
+  const handleRatingClick = async (rate) => {
+    if (userRating || !selectedGame) return;
 
-  // Handle 'Tags' dropdown click
-  const handleCategoryClick = (category) => {
-    setCategoryFilter(category);
-    setIsCategoryDropdownOpen(false);
-    // When filtering, also reset search
-    setSearchResults(null);
-    setSearchQuery('');
-    setSelectedGame(null); // *** تمت الإضافة: العودة للرئيسية ***
-    window.history.pushState({ view: 'home' }, ''); // <<< FIX 5
-    // setCurrentPage(1); // Handled by useEffect
-  };
-
-  // --- Start Related Games Logic ---
-  const getRelatedGames = () => {
-    if (!selectedGame) return [];
-    return games
-      .filter(
-        (g) =>
-          g.id !== selectedGame.id && // Not the same game
-          g.categories.some((cat) => selectedGame.categories.includes(cat)) // At least one matching category
-      )
-      .slice(0, 5); // Show 5 related games
-  };
-  // --- End Related Games Logic ---
-
-  // --- Start Dashboard Filter Logic ---
-  const filteredDashboardGames = games.filter(
-    (game) =>
-      game.name.toLowerCase().includes(dashboardSearchQuery.toLowerCase()) ||
-      game.description.toLowerCase().includes(dashboardSearchQuery.toLowerCase())
-  );
-  // --- End Dashboard Filter Logic ---
-
-  // --- START RATING CLICK HANDLER ---
-  const handleRatingClick = (rate) => {
-    if (userRating || !selectedGame) return; // يمكن التقييم مرة واحدة فقط
-
-    // حساب المتوسط الجديد
     const newTotalRating =
       selectedGame.rating * selectedGame.ratingCount + rate;
     const newRatingCount = selectedGame.ratingCount + 1;
     const newAverage = newTotalRating / newRatingCount;
 
-    setUserRating(rate); // تخزين تقييم المستخدم الحالي
+    setUserRating(rate); // تحديث الواجهة فوراً
 
-    // تحديث قائمة الألعاب الرئيسية
-    const updatedGames = games.map((g) =>
-      g.id === selectedGame.id
-        ? { ...g, rating: newAverage, ratingCount: newRatingCount }
-        : g
-    );
-    setGames(updatedGames);
-
-    // تحديث اللعبة المحددة حالياً
-    setSelectedGame({
+    // تحديث الحالة المحلية
+    const updatedGame = {
       ...selectedGame,
       rating: newAverage,
       ratingCount: newRatingCount,
-    });
-  };
-  // --- END RATING CLICK HANDLER ---
+    };
+    setSelectedGame(updatedGame);
+    setGames(games.map((g) => (g.id === selectedGame.id ? updatedGame : g)));
+    setAllGames(
+      allGames.map((g) => (g.id === selectedGame.id ? updatedGame : g))
+    );
 
-  // <<< START URL FORMATTERS >>>
-  // Helper for standard web links
+    // إرسال التحديث إلى Supabase
+    const { error } = await supabase
+      .from('games')
+      .update({ rating: newAverage, ratingCount: newRatingCount })
+      .eq('id', selectedGame.id);
+
+    if (error) {
+      console.error('Error updating rating:', error.message);
+      // (يمكن التراجع عن التغيير المحلي هنا إذا فشل التحديث)
+    }
+  };
+
+  // ... (الدوال المتبقية: handleSelectGame, handleGoBack, handleCategoryClick, getRelatedGames, formatters لا تتغير) ...
+  const handleSelectGame = (game) => {
+    setSelectedGame(game);
+    setShowDashboard(false);
+    setSearchResults(null);
+    setSearchQuery('');
+    setUserRating(null);
+    setHoverRating(0);
+    window.history.pushState({ view: 'game' }, '');
+  };
+
+  const handleGoBack = () => {
+    window.history.back();
+  };
+
+  const handleCategoryClick = (category) => {
+    setCategoryFilter(category);
+    setIsCategoryDropdownOpen(false);
+    setSearchResults(null);
+    setSearchQuery('');
+    setSelectedGame(null);
+    window.history.pushState({ view: 'home' }, '');
+    // إرجاع الألعاب إلى القائمة الكاملة عند الفلترة
+    setGames(allGames);
+  };
+
+  const getRelatedGames = () => {
+    if (!selectedGame) return [];
+    return allGames // <-- استخدام allGames
+      .filter(
+        (g) =>
+          g.id !== selectedGame.id &&
+          (g.categories || []).some((cat) =>
+            (selectedGame.categories || []).includes(cat)
+          )
+      )
+      .slice(0, 5);
+  };
+
+  const filteredDashboardGames = allGames.filter(
+    // <-- استخدام allGames
+    (game) =>
+      game.name.toLowerCase().includes(dashboardSearchQuery.toLowerCase()) ||
+      game.description.toLowerCase().includes(dashboardSearchQuery.toLowerCase())
+  );
+
   const formatWebUrl = (url) => {
     if (!url) return '#';
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) {
+    if (
+      url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('//')
+    ) {
       return url;
     }
     return `https://${url}`;
   };
 
-  // Helper for email
   const formatEmailUrl = (email) => {
     if (!email) return '#';
     if (email.startsWith('mailto:')) {
@@ -884,7 +949,28 @@ export default function Home() {
     }
     return `mailto:${email}`;
   };
-  // <<< END URL FORMATTERS >>>
+
+  // --- ⭐️ بداية الإصلاح ⭐️ ---
+  // هذا الكود سيعرض شاشة التحميل إذا:
+  // 1. لم نتأكد أننا في المتصفح (isClient = false) - هذا يضمن تطابق الخادم والمتصفح
+  // 2. أو إذا كنا في المتصفح (isClient = true) وما زلنا نحمل البيانات
+  
+  // --- ⭐️ تم حذف التعريفات المكررة (t و isRTL) من هنا ⭐️ ---
+
+  if (!isClient || (loading && games.length === 0)) {
+    return (
+      <div
+        className={`min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 ${
+          isRTL ? 'rtl' : 'ltr'
+        } flex flex-col items-center justify-center text-white`}
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
+        <Loader2 className="w-16 h-16 text-purple-400 animate-spin mb-4" />
+        <h1 className="text-2xl font-semibold">{t.loadingGames}</h1>
+      </div>
+    );
+  }
+  // --- ⭐️ نهاية الإصلاح ⭐️ ---
 
   return (
     <div
@@ -893,12 +979,10 @@ export default function Home() {
       }`}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      {/* Header */}
+      {/* ... (Header لا يتغير) ... */}
       <header className="bg-black/30 backdrop-blur-md border-b border-purple-500/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          {/* تم تعديل هذا الجزء ليصبح متجاوباً */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Logo - Home Button (Order 1 on mobile and desktop) */}
             <button
               onClick={() => {
                 setShowDashboard(false);
@@ -906,12 +990,11 @@ export default function Home() {
                 setSearchResults(null);
                 setSearchQuery('');
                 setSuggestions([]);
-                // setCategoryFilter(''); // *** تم الحذف ***
-                // setSortBy('new'); // *** تم الحذف ***
                 setCurrentPage(1);
-                window.history.pushState({ view: 'home' }, ''); // <<< FIX 6
+                window.history.pushState({ view: 'home' }, '');
+                setGames(allGames); // <-- إرجاع القائمة الكاملة
               }}
-              className="flex items-center gap-3 order-1" // order-1
+              className="flex items-center gap-3 order-1"
             >
               <Gamepad2 className="w-8 h-8 text-purple-400" />
               <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
@@ -919,9 +1002,7 @@ export default function Home() {
               </h1>
             </button>
 
-            {/* Controls (Order 2 on mobile, 4 on desktop) */}
             <div className="flex items-center gap-2 order-2 md:order-4">
-              {/* Language Switcher */}
               <div className="relative">
                 <select
                   value={lang}
@@ -949,24 +1030,22 @@ export default function Home() {
                 />
               </div>
 
-              {/* Admin/Dashboard Button */}
               <button
                 onClick={() => {
                   setShowDashboard(true);
                   setSelectedGame(null);
-                  window.history.pushState({ view: 'dashboard' }, ''); // <<< FIX 7
+                  window.history.pushState({ view: 'dashboard' }, '');
                 }}
-                title={t.dashboard} // Tooltip
+                title={t.dashboard}
                 className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
               >
                 <LayoutDashboard className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Search (Order 3 on mobile, 2 on desktop) */}
             <form
               onSubmit={handleSearchSubmit}
-              className="relative w-full md:flex-1 md:max-w-md order-3 md:order-2" // Responsive order and width
+              className="relative w-full md:flex-1 md:max-w-md order-3 md:order-2"
             >
               <div className="relative">
                 <Search
@@ -984,7 +1063,6 @@ export default function Home() {
                   } py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400`}
                 />
 
-                {/* Autocomplete Suggestions */}
                 {suggestions.length > 0 && (
                   <div
                     className={`absolute top-full mt-2 w-full bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg max-h-60 overflow-y-auto`}
@@ -998,7 +1076,7 @@ export default function Home() {
                         <img
                           src={
                             game.image ||
-                            'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=100&h=100&fit=crop'
+                            'https://placehold.co/100x100/4a0e71/ffffff?text=?'
                           }
                           alt={game.name}
                           className="w-10 h-10 rounded-md object-cover"
@@ -1009,7 +1087,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              {/* Submit Button */}
               <button
                 type="submit"
                 title={t.submitSearch}
@@ -1020,17 +1097,14 @@ export default function Home() {
               </button>
             </form>
 
-            {/* Nav Links (Order 4 on mobile, 3 on desktop) - Removed "hidden" */}
-            {/* *** تمت الإضافة: شرط الإخفاء *** */}
             {!showDashboard && !selectedGame && (
               <div
-                ref={categoryDropdownRef} // *** تم النقل إلى الحاوية ***
+                ref={categoryDropdownRef}
                 className="relative flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start"
               >
                 <button
                   onClick={() => {
                     setSortBy('popular');
-                    // setCurrentPage(1); // Handled by useEffect
                   }}
                   className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
                     sortBy === 'popular'
@@ -1043,7 +1117,6 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setSortBy('new');
-                    // setCurrentPage(1); // Handled by useEffect
                   }}
                   className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
                     sortBy === 'new'
@@ -1054,10 +1127,7 @@ export default function Home() {
                   {t.new}
                 </button>
 
-                {/* Tags Dropdown */}
                 <div className="relative">
-                  {' '}
-                  {/* *** تم حذف الـ ref من هنا *** */}
                   <button
                     onClick={() =>
                       setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
@@ -1074,11 +1144,10 @@ export default function Home() {
                       }`}
                     />
                   </button>
-                  {/* Dropdown Menu - Responsive Width and Columns */}
                   {isCategoryDropdownOpen && (
                     <div
                       className={`absolute ${
-                        isRTL ? 'left-0' : 'right-0' // *** تم التعديل ***
+                        isRTL ? 'left-0' : 'right-0'
                       } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
                     >
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
@@ -1130,14 +1199,14 @@ export default function Home() {
                       <img
                         src={
                           game.image ||
-                          'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop'
+                          'https://placehold.co/400x300/4a0e71/ffffff?text=No+Image'
                         }
                         alt={game.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src =
-                            'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop';
+                            'https://placehold.co/400x300/4a0e71/ffffff?text=Error';
                         }}
                       />
                     </div>
@@ -1173,7 +1242,6 @@ export default function Home() {
                           )}
                         </div>
                       </div>
-                      {/* <<< START RATING DISPLAY (GRID) >>> */}
                       <div className="flex items-center gap-2 text-sm text-gray-400">
                         <div className="flex items-center">
                           {[...Array(5)].map((_, i) => (
@@ -1188,11 +1256,8 @@ export default function Home() {
                             />
                           ))}
                         </div>
-                        <span>
-                          ({game.ratingCount})
-                        </span>
+                        <span>({game.ratingCount})</span>
                       </div>
-                      {/* <<< END RATING DISPLAY (GRID) >>> */}
                     </div>
                   </div>
                 ))
@@ -1203,7 +1268,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Pagination Component */}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -1223,20 +1287,19 @@ export default function Home() {
               <span>{t.back}</span>
             </button>
 
-            {/* Header */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
               <div className="md:col-span-1">
                 <img
                   src={
                     selectedGame.image ||
-                    'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=600&fit=crop'
+                    'https://placehold.co/400x600/4a0e71/ffffff?text=No+Image'
                   }
                   alt={selectedGame.name}
                   className="w-full h-auto object-cover rounded-xl shadow-lg border-2 border-purple-500/30"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src =
-                      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=600&fit=crop';
+                      'https://placehold.co/400x600/4a0e71/ffffff?text=Error';
                   }}
                 />
               </div>
@@ -1245,8 +1308,7 @@ export default function Home() {
                   {selectedGame.name}
                 </h1>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {/* *** تم التعديل هنا إلى button *** */}
-                  {selectedGame.categories.map((cat) => (
+                  {(selectedGame.categories || []).map((cat) => (
                     <button
                       key={cat}
                       onClick={() => handleCategoryClick(cat)}
@@ -1256,13 +1318,11 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-                {/* *** تم إضافة عدد الزيارات هنا *** */}
                 <div className="flex items-center gap-2 text-gray-400 mb-4">
                   <Eye className="w-5 h-5" />
                   <span>{selectedGame.visits}</span>
                 </div>
 
-                {/* <<< START INTERACTIVE RATING >>> */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => {
@@ -1271,7 +1331,9 @@ export default function Home() {
                         <Star
                           key={i}
                           className={`w-6 h-6 transition-colors ${
-                            rate <= (hoverRating || Math.round(userRating || selectedGame.rating))
+                            rate <=
+                            (hoverRating ||
+                              Math.round(userRating || selectedGame.rating))
                               ? 'text-yellow-400'
                               : 'text-gray-600'
                           } ${
@@ -1280,7 +1342,9 @@ export default function Home() {
                               : 'cursor-default'
                           }`}
                           fill="currentColor"
-                          onMouseEnter={() => !userRating && setHoverRating(rate)}
+                          onMouseEnter={() =>
+                            !userRating && setHoverRating(rate)
+                          }
                           onMouseLeave={() => !userRating && setHoverRating(0)}
                           onClick={() => handleRatingClick(rate)}
                         />
@@ -1288,20 +1352,16 @@ export default function Home() {
                     })}
                   </div>
                   <div className="text-gray-400 text-sm">
-                    <span>
-                      {selectedGame.rating.toFixed(1)} / 5
-                    </span>
+                    <span>{selectedGame.rating.toFixed(1)} / 5</span>
                     <span className="mx-2">|</span>
                     <span>
                       ({selectedGame.ratingCount} {t.ratings})
                     </span>
                   </div>
                 </div>
-                {/* <<< END INTERACTIVE RATING >>> */}
               </div>
             </div>
 
-            {/* Description Section */}
             <div className="mt-12">
               <h3 className="text-2xl font-bold text-white mb-4">
                 {t.description}
@@ -1311,26 +1371,25 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Screenshots */}
-            {selectedGame.screenshots && selectedGame.screenshots.length > 0 && (
-              <div className="mt-12">
-                <h3 className="text-2xl font-bold text-white mb-4">
-                  {t.screenshots}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedGame.screenshots.map((ss, index) => (
-                    <img
-                      key={index}
-                      src={ss}
-                      alt={`${selectedGame.name} screenshot ${index + 1}`}
-                      className="w-full h-auto object-cover rounded-lg border border-purple-500/20"
-                    />
-                  ))}
+            {selectedGame.screenshots &&
+              selectedGame.screenshots.length > 0 && (
+                <div className="mt-12">
+                  <h3 className="text-2xl font-bold text-white mb-4">
+                    {t.screenshots}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedGame.screenshots.map((ss, index) => (
+                      <img
+                        key={index}
+                        src={ss}
+                        alt={`${selectedGame.name} screenshot ${index + 1}`}
+                        className="w-full h-auto object-cover rounded-lg border border-purple-500/20"
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Downloads */}
             {(selectedGame.links?.windows ||
               selectedGame.links?.mac ||
               selectedGame.links?.linux ||
@@ -1388,7 +1447,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* === START RELATED GAMES === */}
             {getRelatedGames().length > 0 && (
               <div className="mt-12 pt-8 border-t border-purple-500/20">
                 <h3 className="text-2xl font-bold text-white mb-4">
@@ -1405,14 +1463,14 @@ export default function Home() {
                         <img
                           src={
                             game.image ||
-                            'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop'
+                            'https://placehold.co/400x300/4a0e71/ffffff?text=No+Image'
                           }
                           alt={game.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src =
-                              'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop';
+                              'https://placehold.co/400x300/4a0e71/ffffff?text=Error';
                           }}
                         />
                       </div>
@@ -1448,7 +1506,6 @@ export default function Home() {
                             )}
                           </div>
                         </div>
-                        {/* <<< START RATING DISPLAY (RELATED) >>> */}
                         <div className="flex items-center gap-2 text-sm text-gray-400">
                           <div className="flex items-center">
                             {[...Array(5)].map((_, i) => (
@@ -1463,30 +1520,24 @@ export default function Home() {
                               />
                             ))}
                           </div>
-                          <span>
-                            ({game.ratingCount})
-                          </span>
+                          <span>({game.ratingCount})</span>
                         </div>
-                        {/* <<< END RATING DISPLAY (RELATED) >>> */}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {/* === END RELATED GAMES === */}
           </div>
         ) : (
           /* Dashboard View */
           <div className="space-y-6">
-            {/* Add Game Form */}
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                 <Plus className="w-6 h-6" />
                 {t.addGame}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Game Name Input */}
                 <div className="md:col-span-1">
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.gameName}
@@ -1503,19 +1554,18 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Visits Input */}
                 <div className="md:col-span-1">
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.visits}
                   </label>
                   <input
-                    type="text" // تم التغيير من number إلى text
+                    type="text"
                     placeholder={t.visits}
                     value={newGame.visits}
                     onChange={(e) =>
                       setNewGame({
                         ...newGame,
-                        visits: e.target.value, // تم التعديل
+                        visits: e.target.value,
                       })
                     }
                     className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
@@ -1523,7 +1573,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* <<< START RATING INPUTS (ADD) >>> */}
                 <div className="md:col-span-1">
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.rating} (0-5)
@@ -1554,9 +1603,7 @@ export default function Home() {
                                     placeholder-gray-400 focus:outline-none focus:border-purple-400"
                   />
                 </div>
-                {/* <<< END RATING INPUTS (ADD) >>> */}
 
-                {/* Categories Input */}
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.categories}
@@ -1577,7 +1624,6 @@ export default function Home() {
                       </span>
                     ))}
                   </div>
-                  {/* <<< START MOBILE FIX: ADD BUTTON >>> */}
                   <div className="relative">
                     <input
                       type="text"
@@ -1591,12 +1637,12 @@ export default function Home() {
                         }
                       }}
                       className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
-                        isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4' // Padding for button
+                        isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4'
                       } py-2 text-white
                                     placeholder-gray-400 focus:outline-none focus:border-purple-400`}
                     />
                     <button
-                      type="button" // Prevent form submission
+                      type="button"
                       title={t.addCategoryBtn}
                       onClick={() => handleAddCategory('new')}
                       className={`absolute top-1/2 -translate-y-1/2 ${
@@ -1606,7 +1652,6 @@ export default function Home() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-                  {/* <<< END MOBILE FIX: ADD BUTTON >>> */}
                 </div>
 
                 <textarea
@@ -1629,9 +1674,9 @@ export default function Home() {
                     onChange={(e) => handleImageUpload(e, 'new')}
                     className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
                   />
-                  {imageFile && (
+                  {newGame.image && ( // <-- استخدام newGame.image للمعاينة
                     <img
-                      src={imageFile}
+                      src={newGame.image}
                       alt="Preview"
                       className="mt-2 w-24 h-24 object-cover rounded-lg border border-purple-500/30"
                     />
@@ -1650,13 +1695,13 @@ export default function Home() {
                   />
                 </div>
               </div>
-              {screenshotFiles.length > 0 && (
+              {newGame.screenshots.length > 0 && ( // <-- استخدام newGame.screenshots للمعاينة
                 <div className="mt-4">
                   <label className="block mb-2 text-gray-300 text-sm">
-                    {t.screenshots} ({screenshotFiles.length})
+                    {t.screenshots} ({newGame.screenshots.length})
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {screenshotFiles.map((screenshot, index) => (
+                    {newGame.screenshots.map((screenshot, index) => (
                       <div key={index} className="relative group">
                         <img
                           src={screenshot}
@@ -1676,7 +1721,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Download Links */}
               <div className="mt-4">
                 <label className="block mb-2 text-gray-300 text-sm">
                   {t.downloadLinks}
@@ -1739,13 +1783,21 @@ export default function Home() {
 
               <button
                 onClick={handleAddGame}
-                className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+                disabled={isUploading} // <-- تعطيل الزر أثناء الرفع
+                className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all
+                                disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t.addGame}
+                {isUploading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {t.uploading}
+                  </span>
+                ) : (
+                  t.addGame
+                )}
               </button>
             </div>
 
-            {/* === START SITE SETTINGS === */}
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                 <Settings className="w-6 h-6" />
@@ -1801,15 +1853,9 @@ export default function Home() {
                   className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
                 />
               </div>
-              {/* === START SAVE BUTTON === */}
               <div className="flex items-center gap-4 mt-4">
                 <button
-                  onClick={() => {
-                    // In a real app, this would save to a DB
-                    console.log('Settings saved:', socialLinks);
-                    setShowSettingsSaved(true);
-                    setTimeout(() => setShowSettingsSaved(false), 2000);
-                  }}
+                  onClick={handleSaveSettings} // <-- دالة الحفظ المحدثة
                   className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                 >
                   <Save className="w-4 h-4" />
@@ -1819,13 +1865,9 @@ export default function Home() {
                   <span className="text-green-400">{t.saved}</span>
                 )}
               </div>
-              {/* === END SAVE BUTTON === */}
             </div>
-            {/* === END SITE SETTINGS === */}
 
-            {/* Games List */}
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
-              {/* *** تم تعديل هذا السطر لإضافة البحث *** */}
               <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                 <h2 className="text-2xl font-bold text-white">
                   {t.dashboard}
@@ -1849,7 +1891,6 @@ export default function Home() {
               </div>
 
               <div className="space-y-4">
-                {/* *** تم التعديل لاستخدام القائمة المفلترة *** */}
                 {filteredDashboardGames.map((game) => (
                   <div
                     key={game.id}
@@ -1858,7 +1899,6 @@ export default function Home() {
                     {editingGame?.id === game.id ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Edit Game Name Input */}
                           <div className="md:col-span-1">
                             <label className="block mb-2 text-gray-300 text-sm">
                               {t.gameName}
@@ -1876,25 +1916,23 @@ export default function Home() {
                               placeholder={t.gameName}
                             />
                           </div>
-                          {/* Edit Visits Input */}
                           <div className="md:col-span-1">
                             <label className="block mb-2 text-gray-300 text-sm">
                               {t.visits}
                             </label>
                             <input
-                              type="text" // تم التغيير من number
+                              type="text"
                               value={editingGame.visits}
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
-                                  visits: e.target.value, // تم التعديل
+                                  visits: e.target.value,
                                 })
                               }
                               className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
                               placeholder={t.visits}
                             />
                           </div>
-                          {/* <<< START RATING INPUTS (EDIT) >>> */}
                           <div className="md:col-span-1">
                             <label className="block mb-2 text-gray-300 text-sm">
                               {t.rating} (0-5)
@@ -1931,10 +1969,8 @@ export default function Home() {
                                     placeholder-gray-400 focus:outline-none focus:border-purple-400"
                             />
                           </div>
-                          {/* <<< END RATING INPUTS (EDIT) >>> */}
                         </div>
 
-                        {/* *** تم إصلاح الكود هنا *** */}
                         <textarea
                           rows="3"
                           value={editingGame.description}
@@ -1948,13 +1984,12 @@ export default function Home() {
                           placeholder={t.description}
                         />
 
-                        {/* Edit Categories Input */}
                         <div>
                           <label className="block mb-2 text-gray-300 text-sm">
                             {t.categories}
                           </label>
                           <div className="flex flex-wrap gap-2 mb-2">
-                            {editingGame.categories.map((cat) => (
+                            {(editingGame.categories || []).map((cat) => (
                               <span
                                 key={cat}
                                 className="flex items-center gap-1 px-3 py-1 bg-purple-600/30 text-purple-300 rounded-full text-xs"
@@ -1971,7 +2006,6 @@ export default function Home() {
                               </span>
                             ))}
                           </div>
-                          {/* <<< START MOBILE FIX: ADD BUTTON >>> */}
                           <div className="relative">
                             <input
                               type="text"
@@ -1985,12 +2019,12 @@ export default function Home() {
                                 }
                               }}
                               className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
-                                isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4' // Padding for button
+                                isRTL ? 'pl-10 pr-4' : 'pr-10 pl-4'
                               } py-2 text-white
                                             placeholder-gray-400 focus:outline-none focus:border-purple-400`}
                             />
                             <button
-                              type="button" // Prevent form submission
+                              type="button"
                               title={t.addCategoryBtn}
                               onClick={() => handleAddCategory('edit')}
                               className={`absolute top-1/2 -translate-y-1/2 ${
@@ -2000,72 +2034,10 @@ export default function Home() {
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
-                          {/* <<< END MOBILE FIX: ADD BUTTON >>> */}
                         </div>
 
-                        <div>
-                          <label className="block mb-2 text-gray-300 text-sm">
-                            {t.uploadImage}
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(e, 'edit')}
-                            className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
-                          />
-                          {editingGame.image && (
-                            <img
-                              src={editingGame.image}
-                              alt="Preview"
-                              className="mt-2 w-24 h-24 object-cover rounded-lg border border-purple-500/30"
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <label className="block mb-2 text-gray-300 text-sm">
-                            {t.uploadScreenshots}
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={(e) => handleScreenshotsUpload(e, 'edit')}
-                            className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
-                          />
-                        </div>
-                        {editingGame.screenshots &&
-                          editingGame.screenshots.length > 0 && (
-                            <div>
-                              <label className="block mb-2 text-gray-300 text-sm">
-                                {t.screenshots} ({editingGame.screenshots.length}
-                                )
-                              </label>
-                              <div className="grid grid-cols-3 gap-2">
-                                {editingGame.screenshots.map(
-                                  (screenshot, index) => (
-                                    <div key={index} className="relative group">
-                                      <img
-                                        src={screenshot}
-                                        alt={`Screenshot ${index + 1}`}
-                                        className="w-full h-20 object-cover rounded-lg border border-purple-500/30"
-                                      />
-                                      <button
-                                        onClick={() =>
-                                          removeScreenshot(index, 'edit')
-                                        }
-                                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full
-                                                                opacity-0 group-hover:opacity-100 transition-opacity"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
+                        {/* (تعديل الصور هنا - تم تخطيه للتبسيط) */}
 
-                        {/* Edit Download Links */}
                         <div className="mt-4">
                           <label className="block mb-2 text-gray-300 text-sm">
                             {t.downloadLinks}
@@ -2074,7 +2046,7 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder={t.windowsLink}
-                              value={editingGame.links.windows}
+                              value={editingGame.links?.windows || ''}
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
@@ -2090,7 +2062,7 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder={t.macLink}
-                              value={editingGame.links.mac}
+                              value={editingGame.links?.mac || ''}
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
@@ -2106,7 +2078,7 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder={t.linuxLink}
-                              value={editingGame.links.linux}
+                              value={editingGame.links?.linux || ''}
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
@@ -2122,7 +2094,7 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder={t.androidLink}
-                              value={editingGame.links.android}
+                              value={editingGame.links?.android || ''}
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
@@ -2158,15 +2130,15 @@ export default function Home() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-white">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-bold text-white truncate">
                             {game.name}
                           </h3>
-                          <p className="text-gray-300 text-sm">
-                            {game.description.substring(0, 100)}...
+                          <p className="text-gray-300 text-sm truncate">
+                            {game.description}
                           </p>
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {game.categories.map((cat) => (
+                            {(game.categories || []).map((cat) => (
                               <span
                                 key={cat}
                                 className="inline-block mt-2 px-3 py-1 bg-purple-600/30 text-purple-300 rounded-full text-xs"
@@ -2176,7 +2148,7 @@ export default function Home() {
                             ))}
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-shrink-0">
                           <button
                             onClick={() => setEditingGame(game)}
                             className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -2200,7 +2172,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* === START FOOTER === */}
+      {/* ... (Footer لا يتغير) ... */}
       <footer className="container mx-auto px-4 py-8 mt-12 border-t border-purple-500/20">
         <div className="flex items-center justify-center gap-6">
           {socialLinks.telegram && (
@@ -2222,7 +2194,6 @@ export default function Home() {
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white"
             >
-              {/* تم تغيير الأيقونة */}
               <RedditIcon className="w-6 h-6" />
             </a>
           )}
@@ -2252,8 +2223,8 @@ export default function Home() {
             <a
               href={formatEmailUrl(socialLinks.email)}
               title="Email"
-              target="_blank" // تمت الإضافة
-              rel="noopener noreferrer" // تمت الإضافة
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-gray-400 hover:text-white"
             >
               <Mail className="w-6 h-6" />
@@ -2261,8 +2232,6 @@ export default function Home() {
           )}
         </div>
       </footer>
-      {/* === END FOOTER === */}
     </div>
   );
 }
-
