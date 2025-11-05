@@ -535,6 +535,7 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
 
   // --- ⭐️ بداية إصلاح زر الرجوع (Refs) ⭐️ ---
+  // نستخدم Refs لتخزين أحدث قيمة للحالة ليستخدمها مستمع popstate
   const allGamesRef = useRef(allGames);
   useEffect(() => {
     allGamesRef.current = allGames;
@@ -1307,8 +1308,12 @@ export default function Home() {
         } flex flex-col items-center justify-center text-white`}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
-        <Loader2 className="w-16 h-16 text-purple-400 animate-spin mb-4" />
-        <h1 className="text-2xl font-semibold">{t.loadingGames}</h1>
+        <div className="flex items-center gap-3 animate-pulse">
+          <Gamepad2 className="w-12 h-12 text-purple-400" />
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+            {t.siteName}
+          </h1>
+        </div>
       </div>
     );
   }
@@ -1521,8 +1526,9 @@ export default function Home() {
                   </button>
                   {isCategoryDropdownOpen && (
                     <div
-                      className={`absolute ${
-                        isRTL ? 'left-0' : 'right-0'
+                      // --- ⭐️ هذا هو التعديل الخاص بتوسيط القائمة ⭐️ ---
+                      className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
+                        isRTL ? 'md:left-0' : 'md:right-0'
                       } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
                     >
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
