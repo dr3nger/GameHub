@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 // استيراد Supabase
-import { supabase } from '@/utils/supabaseClient'; // <-- ⭐️ تم تعديل المسار هنا
+import { supabase } from '../utils/supabaseClient'; // <-- ⭐️ المسار الصحيح
 // استيراد UUID
 import { v4 as uuidv4 } from 'uuid';
 
@@ -1298,8 +1298,7 @@ export default function Home() {
     return `mailto:${email}`;
   };
 
-  // --- شاشة التحميل ---
-  // (تم تعديلها لتشمل loadingAuth)
+  // --- ⭐️ شاشة التحميل (معدلة) ⭐️ ---
   if (!isClient || loadingAuth || (loading && games.length === 0 && !user)) {
     return (
       <div
