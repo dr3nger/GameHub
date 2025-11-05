@@ -1,3 +1,4 @@
+```react:صفحة التطبيق الرئيسية (النسخة الآمنة):pages/index.js
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -29,15 +30,18 @@ import {
   Twitter,
   Mail,
   Star,
-  Loader2, // <-- أيقونة للتحميل
+  Loader2,
+  User, // <-- أيقونة جديدة
+  LogOut, // <-- أيقونة جديدة
+  LogIn, // <-- أيقونة جديدة
 } from 'lucide-react';
 
 // استيراد Supabase
-import { supabase } from '../utils/supabaseClient'; // <-- تم تصحيح المسار هنا
-// استيراد UUID لإنشاء أسماء ملفات فريدة
+import { supabase } from '../utils/supabaseClient'; // <-- المسار الصحيح
+// استيراد UUID
 import { v4 as uuidv4 } from 'uuid';
 
-// ... (الكود الخاص بالترجمة Translations لا يتغير) ...
+// ... (كود الترجمة Translations لا يتغير) ...
 const translations = {
   en: {
     siteName: 'GameHub',
@@ -98,8 +102,14 @@ const translations = {
     rating: 'Rating',
     ratingCount: 'Rating Count',
     ratings: 'ratings',
-    uploading: 'Uploading...', // <-- تمت الإضافة
-    loadingGames: 'Loading games...', // <-- تمت الإضافة
+    uploading: 'Uploading...',
+    loadingGames: 'Loading games...',
+    login: 'Login', // <-- جديد
+    logout: 'Logout', // <-- جديد
+    adminLogin: 'Admin Login', // <-- جديد
+    password: 'Password', // <-- جديد
+    loginError: 'Login failed. Check email or password.', // <-- جديد
+    loggingIn: 'Logging in...', // <-- جديد
   },
   ar: {
     siteName: 'GameHub',
@@ -160,8 +170,14 @@ const translations = {
     rating: 'التقييم',
     ratingCount: 'عدد التقييمات',
     ratings: 'تقييمات',
-    uploading: 'جاري الرفع...', // <-- تمت الإضافة
-    loadingGames: 'جاري تحميل الألعاب...', // <-- تمت الإضافة
+    uploading: 'جاري الرفع...',
+    loadingGames: 'جاري تحميل الألعاب...',
+    login: 'تسجيل الدخول', // <-- جديد
+    logout: 'تسجيل الخروج', // <-- جديد
+    adminLogin: 'دخول المدير', // <-- جديد
+    password: 'كلمة المرور', // <-- جديد
+    loginError: 'فشل الدخول. تأكد من البريد أو كلمة المرور.', // <-- جديد
+    loggingIn: 'جاري الدخول...', // <-- جديد
   },
   de: {
     siteName: 'SpielHub',
@@ -222,11 +238,17 @@ const translations = {
     rating: 'Bewertung',
     ratingCount: 'Anzahl Bewertungen',
     ratings: 'Bewertungen',
-    uploading: 'Lädt hoch...', // <-- تمت الإضافة
-    loadingGames: 'Lade Spiele...', // <-- تمت الإضافة
+    uploading: 'Lädt hoch...',
+    loadingGames: 'Lade Spiele...',
+    login: 'Anmelden', // <-- جديد
+    logout: 'Abmelden', // <-- جديد
+    adminLogin: 'Admin-Anmeldung', // <-- جديد
+    password: 'Passwort', // <-- جديد
+    loginError: 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.', // <-- جديد
+    loggingIn: 'Anmelden...', // <-- جديد
   },
 };
-// ... (بقية كود الترجمة و أيقونة Reddit لا تتغير) ...
+// ... (أيقونة Reddit و Pagination لا يتغير) ...
 // <<< START SVG Icon for Reddit >>>
 const RedditIcon = ({ className }) => (
   <svg
@@ -253,7 +275,6 @@ const RedditIcon = ({ className }) => (
 
 const GAMES_PER_PAGE = 20;
 
-// ... (مكون Pagination لا يتغير) ...
 // Pagination Component
 const Pagination = ({ currentPage, totalPages, onPageChange, t, isRTL }) => {
   if (totalPages <= 1) return null;
@@ -378,6 +399,90 @@ const Pagination = ({ currentPage, totalPages, onPageChange, t, isRTL }) => {
   );
 };
 
+// --- 🔐 مكون تسجيل الدخول 🔐 ---
+const LoginModal = ({ t, isRTL, onLogin, onCancel, loginError, isLoggingIn }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onLogin(email, password);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div
+        className="bg-gray-800 border border-purple-500/30 rounded-xl p-8 w-full max-w-md"
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+          {t.adminLogin}
+        </h2>
+        {loginError && (
+          <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-center">
+            {loginError}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-2 text-gray-300 text-sm">
+              {t.email}
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
+                         placeholder-gray-400 focus:outline-none focus:border-purple-400"
+            />
+          </div>
+          <div>
+            <label className="block mb-2 text-gray-300 text-sm">
+              {t.password}
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
+                         placeholder-gray-400 focus:outline-none focus:border-purple-400"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4 pt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isLoggingIn}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-all
+                         disabled:opacity-50"
+            >
+              {t.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all
+                         disabled:opacity-50"
+            >
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t.loggingIn}
+                </>
+              ) : (
+                t.login
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+// --- 🔐 نهاية مكون تسجيل الدخول 🔐 ---
+
 export default function Home() {
   const [lang, setLang] = useState('en');
   const [searchQuery, setSearchQuery] = useState('');
@@ -411,10 +516,15 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
-  // --- ⭐️ بداية الإصلاح ⭐️ ---
-  // هذا المتغير سيتأكد أننا في المتصفح قبل عرض الواجهة
+  // --- 🔐 حالة المصادقة (Auth) 🔐 ---
+  const [user, setUser] = useState(null);
+  const [loadingAuth, setLoadingAuth] = useState(true); // <-- للتأكد من فحص الجلسة أولاً
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginError, setLoginError] = useState(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  // --- 🔐 نهاية حالة المصادقة 🔐 ---
+
   const [isClient, setIsClient] = useState(false);
-  // --- ⭐️ نهاية الإصلاح ⭐️ ---
 
   const selectedGameRef = useRef(selectedGame);
   useEffect(() => {
@@ -450,7 +560,9 @@ export default function Home() {
 
   useEffect(() => {
     const handleBrowserBack = (event) => {
-      if (selectedGameRef.current) {
+      if (showLogin) {
+        setShowLogin(false);
+      } else if (selectedGameRef.current) {
         setSelectedGame(null);
       } else if (showDashboardRef.current) {
         setShowDashboard(false);
@@ -459,16 +571,27 @@ export default function Home() {
 
     window.addEventListener('popstate', handleBrowserBack);
     return () => window.removeEventListener('popstate', handleBrowserBack);
-  }, []);
+  }, [showLogin]); // <-- إضافة showLogin هنا
 
-  // --- SUPABASE: جلب البيانات عند تحميل الصفحة ---
+  // --- 🔐 جلب البيانات وفحص المصادقة ---
   useEffect(() => {
-    // --- ⭐️ بداية الإصلاح ⭐️ ---
-    // نخبر التطبيق أننا الآن في المتصفح
     setIsClient(true);
-    // --- ⭐️ نهاية الإصلاح ⭐️ ---
-
     fetchGamesAndSettings();
+
+    // فحص جلسة المستخدم
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoadingAuth(false);
+    });
+
+    // الاستماع لتغيرات المصادقة (تسجيل دخول/خروج)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []); // <-- المصفوفة الفارغة تضمن تشغيله مرة واحدة
 
   async function fetchGamesAndSettings() {
@@ -491,7 +614,7 @@ export default function Home() {
         .eq('id', 1)
         .single();
 
-      if (settingsError) throw settingsError;
+      // (لا حاجة لرمي خطأ إذا لم يتم العثور على الإعدادات، خاصة مع RLS)
       if (settingsData) {
         setSocialLinks(settingsData.social_links);
       }
@@ -501,6 +624,46 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  // --- 🔐 دوال المصادقة (Auth) 🔐 ---
+  const handleLogin = async (email, password) => {
+    setIsLoggingIn(true);
+    setLoginError(null);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      setLoginError(t.loginError);
+    } else {
+      // سيتم تحديث 'user' بواسطة onAuthStateChange
+      setShowLogin(false);
+      setShowDashboard(true); // <-- فتح لوحة التحكم بعد نجاح الدخول
+      window.history.pushState({ view: 'dashboard' }, '');
+    }
+    setIsLoggingIn(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setShowDashboard(false); // <-- إخفاء لوحة التحكم عند الخروج
+    window.history.pushState({ view: 'home' }, '');
+  };
+
+  const handleDashboardClick = () => {
+    if (user) {
+      setShowDashboard(true);
+      setSelectedGame(null);
+      window.history.pushState({ view: 'dashboard' }, '');
+    } else {
+      setLoginError(null);
+      setShowLogin(true); // <-- إظهار نافذة تسجيل الدخول
+      window.history.pushState({ view: 'login' }, '');
+    }
+  };
+  // --- 🔐 نهاية دوال المصادقة 🔐 ---
 
   // ... (بقية الدوال: handleImageUpload, handleScreenshotsUpload, etc.) ...
   // --- SUPABASE: تعديل دالة رفع صورة الغلاف ---
@@ -950,14 +1113,9 @@ export default function Home() {
     return `mailto:${email}`;
   };
 
-  // --- ⭐️ بداية الإصلاح ⭐️ ---
-  // هذا الكود سيعرض شاشة التحميل إذا:
-  // 1. لم نتأكد أننا في المتصفح (isClient = false) - هذا يضمن تطابق الخادم والمتصفح
-  // 2. أو إذا كنا في المتصفح (isClient = true) وما زلنا نحمل البيانات
-  
-  // --- ⭐️ تم حذف التعريفات المكررة (t و isRTL) من هنا ⭐️ ---
-
-  if (!isClient || (loading && games.length === 0)) {
+  // --- شاشة التحميل ---
+  // (تم تعديلها لتشمل loadingAuth)
+  if (!isClient || loadingAuth || (loading && games.length === 0 && !user)) {
     return (
       <div
         className={`min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 ${
@@ -970,7 +1128,6 @@ export default function Home() {
       </div>
     );
   }
-  // --- ⭐️ نهاية الإصلاح ⭐️ ---
 
   return (
     <div
@@ -979,8 +1136,23 @@ export default function Home() {
       }`}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      {/* ... (Header لا يتغير) ... */}
-      <header className="bg-black/30 backdrop-blur-md border-b border-purple-500/20 sticky top-0 z-50">
+      {/* --- 🔐 نافذة تسجيل الدخول 🔐 --- */}
+      {showLogin && !user && (
+        <LoginModal
+          t={t}
+          isRTL={isRTL}
+          onLogin={handleLogin}
+          onCancel={() => {
+            setShowLogin(false);
+            window.history.back();
+          }}
+          loginError={loginError}
+          isLoggingIn={isLoggingIn}
+        />
+      )}
+
+      {/* --- Header (معدل) --- */}
+      <header className="bg-black/30 backdrop-blur-md border-b border-purple-500/20 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <button
@@ -1002,6 +1174,7 @@ export default function Home() {
               </h1>
             </button>
 
+            {/* --- 🔐 أزرار الدخول والخروج 🔐 --- */}
             <div className="flex items-center gap-2 order-2 md:order-4">
               <div className="relative">
                 <select
@@ -1030,18 +1203,34 @@ export default function Home() {
                 />
               </div>
 
-              <button
-                onClick={() => {
-                  setShowDashboard(true);
-                  setSelectedGame(null);
-                  window.history.pushState({ view: 'dashboard' }, '');
-                }}
-                title={t.dashboard}
-                className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
-              >
-                <LayoutDashboard className="w-5 h-5" />
-              </button>
+              {user ? (
+                <>
+                  <button
+                    onClick={handleDashboardClick}
+                    title={t.dashboard}
+                    className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    title={t.logout}
+                    className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-red-400 hover:bg-red-600 hover:text-white"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleDashboardClick}
+                  title={t.login}
+                  className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white"
+                >
+                  <LogIn className="w-5 h-5" />
+                </button>
+              )}
             </div>
+            {/* --- 🔐 نهاية أزرار الدخول والخروج 🔐 --- */}
 
             <form
               onSubmit={handleSearchSubmit}
@@ -1182,10 +1371,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* --- Main Content (معدل) --- */}
       <main className="container mx-auto px-4 py-8">
         {!showDashboard && !selectedGame ? (
-          /* Home View - Grid */
+          /* Home View - Grid (لا يتغير) */
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {gamesToShow.length > 0 ? (
@@ -1277,7 +1466,7 @@ export default function Home() {
             />
           </>
         ) : !showDashboard && selectedGame ? (
-          /* Game Detail View */
+          /* Game Detail View (لا يتغير) */
           <div className="text-white">
             <button
               onClick={handleGoBack}
@@ -1530,7 +1719,8 @@ export default function Home() {
             )}
           </div>
         ) : (
-          /* Dashboard View */
+          /* Dashboard View (محمي الآن) */
+          /* (يتم عرضه فقط إذا user === true و showDashboard === true) */
           <div className="space-y-6">
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
               <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
@@ -2235,3 +2425,4 @@ export default function Home() {
     </div>
   );
 }
+```eof
