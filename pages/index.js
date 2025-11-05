@@ -959,7 +959,7 @@ export default function Home() {
         links: newGame.links,
         visits: Number(newGame.visits) || 0,
         rating: Number(newGame.rating) || 0,
-        ratingCount: Number(newGame.ratingCount) || 0,
+        rating_count: Number(newGame.ratingCount) || 0, // <-- ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
         image: imageUrl,
         screenshots: screenshotUrls.filter((url) => url !== null),
       };
@@ -1013,7 +1013,7 @@ export default function Home() {
       links: editingGame.links,
       visits: Number(editingGame.visits) || 0,
       rating: Number(editingGame.rating) || 0,
-      ratingCount: Number(editingGame.ratingCount) || 0,
+      rating_count: Number(editingGame.rating_count) || 0, // <-- ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ (استخدام الاسم الصحيح)
       // (تعديل الصور يتطلب منطقاً إضافياً)
     };
 
@@ -1070,10 +1070,14 @@ export default function Home() {
   // --- SUPABASE: تعديل دالة تقييم اللعبة ---
   const handleRatingClick = async (rate) => {
     if (userRating || !selectedGame) return;
+    
+    // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ (يجب استخدام rating_count من قاعدة البيانات)
+    const currentRatingCount = selectedGame.rating_count || 0;
+    const currentRating = selectedGame.rating || 0;
 
     const newTotalRating =
-      selectedGame.rating * selectedGame.ratingCount + rate;
-    const newRatingCount = selectedGame.ratingCount + 1;
+      currentRating * currentRatingCount + rate;
+    const newRatingCount = currentRatingCount + 1;
     const newAverage = newTotalRating / newRatingCount;
 
     setUserRating(rate); // تحديث الواجهة فوراً
@@ -1082,7 +1086,7 @@ export default function Home() {
     const updatedGame = {
       ...selectedGame,
       rating: newAverage,
-      ratingCount: newRatingCount,
+      rating_count: newRatingCount, // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
     };
     setSelectedGame(updatedGame);
     setGames(games.map((g) => (g.id === selectedGame.id ? updatedGame : g)));
@@ -1093,7 +1097,7 @@ export default function Home() {
     // إرسال التحديث إلى Supabase
     const { error } = await supabase
       .from('games')
-      .update({ rating: newAverage, ratingCount: newRatingCount })
+      .update({ rating: newAverage, rating_count: newRatingCount }) // <-- ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
       .eq('id', selectedGame.id);
 
     if (error) {
@@ -1500,7 +1504,8 @@ export default function Home() {
                             />
                           ))}
                         </div>
-                        <span>({game.ratingCount})</span>
+                        {/* ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ */}
+                        <span>({game.rating_count || 0})</span>
                       </div>
                     </div>
                   </div>
@@ -1621,7 +1626,8 @@ export default function Home() {
                     <span>{selectedGame.rating.toFixed(1)} / 5</span>
                     <span className="mx-2">|</span>
                     <span>
-                      ({selectedGame.ratingCount} {t.ratings})
+                      {/* ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ */}
+                      ({selectedGame.rating_count || 0} {t.ratings})
                     </span>
                   </div>
                 </div>
@@ -1786,7 +1792,8 @@ export default function Home() {
                               />
                             ))}
                           </div>
-                          <span>({game.ratingCount})</span>
+                           {/* ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️ */}
+                          <span>({game.rating_count || 0})</span>
                         </div>
                       </div>
                     </div>
@@ -2276,11 +2283,12 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder={t.ratingCount}
-                              value={editingGame.ratingCount}
+                              // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+                              value={editingGame.rating_count} 
                               onChange={(e) =>
                                 setEditingGame({
                                   ...editingGame,
-                                  ratingCount: e.target.value,
+                                  rating_count: e.target.value, // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
                                 })
                               }
                               className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white
@@ -2524,7 +2532,14 @@ export default function Home() {
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <button
-                            onClick={() => setEditingGame(game)}
+                            onClick={() => {
+                              // ⭐️⭐️⭐️ تم الإصلاح هنا ⭐️⭐️⭐️
+                              // التأكد من أن حالة التعديل تستخدم rating_count
+                              setEditingGame({
+                                ...game,
+                                ratingCount: game.rating_count || 0,
+                              });
+                            }}
                             className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                           >
                             <Edit2 className="w-4 h-4" />
