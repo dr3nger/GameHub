@@ -572,7 +572,6 @@ export default function Home() {
   // --- ⭐️ بداية إصلاح زر الرجوع (المستمع) ⭐️ ---
   useEffect(() => {
     // 1. تعيين الحالة الأولية عند تحميل الصفحة
-    // نستخدم replaceState لتجنب "صفحة فارغة" عند الضغط على "رجوع" في البداية
     window.history.replaceState({ view: 'home', category: '' }, '');
 
     // 2. مستمع حدث الرجوع
@@ -591,7 +590,6 @@ export default function Home() {
       // التبديل بناءً على الحالة التي نعود إليها
       switch (state.view) {
         case 'game':
-          // نستخدم allGamesRef للوصول إلى أحدث قائمة ألعاب
           const gameToView = allGamesRef.current.find(
             (g) => g.id === state.gameId
           );
@@ -600,7 +598,6 @@ export default function Home() {
             setShowDashboard(false);
             setShowLogin(false);
           } else {
-            // إذا لم نجد اللعبة (بيانات قديمة؟)، نعود للرئيسية
             setSelectedGame(null);
             setShowDashboard(false);
             setShowLogin(false);
@@ -608,18 +605,15 @@ export default function Home() {
           }
           break;
         case 'dashboard':
-          // نستخدم userRef للتحقق من أن المستخدم لا يزال مسجلاً دخوله
           if (userRef.current) {
             setSelectedGame(null);
             setShowDashboard(true);
             setShowLogin(false);
           } else {
-            // إذا سجل المستخدم الخروج، لا يمكنه العودة للداشبورد
             setSelectedGame(null);
             setShowDashboard(false);
             setShowLogin(false);
             setCategoryFilter('');
-            // تصحيح الهيستوري
             window.history.replaceState({ view: 'home', category: '' }, '');
           }
           break;
@@ -988,6 +982,22 @@ export default function Home() {
     return data.publicUrl;
   }
 
+  // --- ⭐️ دالة مساعدة جديدة لحذف الملفات ⭐️ ---
+  const getPathFromUrl = (url) => {
+    if (!url) return null;
+    try {
+      const urlObj = new URL(url);
+      // المسار هو كل شيء بعد اسم الدلو
+      // .../public/game-images/[public/image.png]
+      const parts = urlObj.pathname.split('/game-images/');
+      return parts[1] || null;
+    } catch (e) {
+      console.error('Invalid URL:', url, e);
+      return null;
+    }
+  };
+
+
   // --- SUPABASE: تعديل دالة إضافة لعبة ---
   const [editingGame, setEditingGame] = useState(null);
   const [newGame, setNewGame] = useState({
@@ -1115,19 +1125,54 @@ export default function Home() {
     setEditLanguage(''); // <-- 🌍 جديد
   };
 
-  // --- SUPABASE: تعديل دالة حذف لعبة ---
-  const handleDeleteGame = async (id) => {
-    // (ملاحظة: يجب أيضاً حذف الصور من Supabase Storage)
-    const { error } = await supabase.from('games').delete().eq('id', id);
+  // --- ⭐️ SUPABASE: دالة حذف اللعبة (مُعدلة لحذف الملفات) ⭐️ ---
+  const handleDeleteGame = async (game) => {
+    // 1. جمع كل مسارات الملفات
+    const pathsToDelete = [];
+    
+    const imagePath = getPathFromUrl(game.image);
+    if (imagePath) {
+      pathsToDelete.push(imagePath);
+    }
 
-    if (error) {
-      console.error('Error deleting game:', error.message);
+    if (game.screenshots && game.screenshots.length > 0) {
+      game.screenshots.forEach(url => {
+        const screenshotPath = getPathFromUrl(url);
+        if (screenshotPath) {
+          pathsToDelete.push(screenshotPath);
+        }
+      });
+    }
+
+    // 2. حذف الملفات من Storage
+    if (pathsToDelete.length > 0) {
+      const { data: fileData, error: fileError } = await supabase.storage
+        .from('game-images')
+        .remove(pathsToDelete);
+      
+      if (fileError) {
+        console.error('Error deleting storage files:', fileError.message);
+        // سنستمر لحذف سجل قاعدة البيانات حتى لو فشل حذف الملفات
+        // يمكنك تغيير هذا السلوك إذا أردت
+      } else {
+        console.log('Deleted files:', fileData);
+      }
+    }
+
+    // 3. حذف السجل من قاعدة البيانات
+    const { error: dbError } = await supabase.from('games').delete().eq('id', game.id);
+
+    if (dbError) {
+      console.error('Error deleting game record:', dbError.message);
+      alert('Failed to delete game record: ' + dbError.message); // إبلاغ المستخدم
       return;
     }
 
-    setGames(games.filter((g) => g.id !== id));
-    setAllGames(allGames.filter((g) => g.id !== id));
+    // 4. تحديث الحالة المحلية
+    setGames(games.filter((g) => g.id !== game.id));
+    setAllGames(allGames.filter((g) => g.id !== game.id));
   };
+
 
   // --- SUPABASE: تعديل دالة حفظ الإعدادات ---
   const handleSaveSettings = async () => {
@@ -2619,7 +2664,7 @@ export default function Home() {
                               // ⭐️ تم الإصلاح
                               setEditingGame({
                                 ...game,
-                                ratingCount: game.rating_count || 0,
+                                rating_count: game.rating_count || 0,
                               });
                             }}
                             className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -2627,7 +2672,8 @@ export default function Home() {
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteGame(game.id)}
+                            // ⭐️⭐️⭐️ تم الإصلاح: إرسال كائن اللعبة كاملاً
+                            onClick={() => handleDeleteGame(game)}
                             className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                           >
                             <Trash2 className="w-4 h-4" />
