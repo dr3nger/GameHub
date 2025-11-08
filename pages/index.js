@@ -1208,7 +1208,7 @@ export default function Home() {
     const updatedGame = {
       ...selectedGame,
       rating: newAverage,
-      rating_count: newRatingCount, // ⭐️ تم الإصلاح
+      rating_count: newRatingCount,
     };
     setSelectedGame(updatedGame);
     setGames(games.map((g) => (g.id === selectedGame.id ? updatedGame : g)));
@@ -1523,39 +1523,41 @@ export default function Home() {
                       }`}
                     />
                   </button>
-                  {isCategoryDropdownOpen && (
-                    <div
-                      // --- ⭐️ هذا هو التعديل الخاص بتوسيط القائمة ⭐️ ---
-                      className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
-                        isRTL ? 'md:left-0' : 'md:right-0'
-                      } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
-                    >
-                      <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                  {/* --- ⭐️ القائمة المنسدلة أُزيلت من هنا ⭐️ --- */}
+                </div>
+
+                {/* --- ⭐️ تم نقل القائمة المنسدلة هنا لتتمركز بشكل صحيح ⭐️ --- */}
+                {isCategoryDropdownOpen && (
+                  <div
+                    // هذه الكلاسات ستعمل الآن بشكل صحيح لأنها ستتمركز بالنسبة للحاوية الأب (التي عرضها 100% على الموبايل)
+                    className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
+                      isRTL ? 'md:left-0' : 'md:right-0'
+                    } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
+                  >
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                      <button
+                        onClick={() => handleCategoryClick('')}
+                        className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
+                          categoryFilter === '' ? 'bg-purple-600' : ''
+                        }`}
+                      >
+                        {t.allCategories}
+                      </button>
+                      {allCategories.map((category) => (
                         <button
-                          onClick={() => handleCategoryClick('')}
+                          key={category}
+                          onClick={() => handleCategoryClick(category)}
                           className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
-                            categoryFilter === '' ? 'bg-purple-600' : ''
+                            categoryFilter === category ? 'bg-purple-600' : ''
                           }`}
                         >
-                          {t.allCategories}
+                          {category}
                         </button>
-                        {allCategories.map((category) => (
-                          <button
-                            key={category}
-                            onClick={() => handleCategoryClick(category)}
-                            className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
-                              categoryFilter === category
-                                ? 'bg-purple-600'
-                                : ''
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+                {/* --- ⭐️ نهاية النقل ⭐️ --- */}
               </div>
             )}
           </div>
@@ -1644,7 +1646,7 @@ export default function Home() {
                 ))
               ) : (
                 <div className="col-span-full text-center text-gray-400 py-12">
-                  {t.noGames}
+                  {loading ? t.loadingGames : t.noGames}
                 </div>
               )}
             </div>
