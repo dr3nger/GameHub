@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 // استيراد Supabase
-import { supabase } from '../utils/supabaseClient'; // <-- ⭐️ المسار الصحيح
+import { supabase } from '@/utils/supabaseClient'; // <-- ⭐️ المسار الصحيح لـ Vercel
 // استيراد UUID
 import { v4 as uuidv4 } from 'uuid';
 
@@ -1524,38 +1524,43 @@ export default function Home() {
                     />
                   </button>
                   {isCategoryDropdownOpen && (
-  <div
-    className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
-      isRTL ? 'md:left-0' : 'md:right-0'
-    } top-full mt-3 w-[95vw] sm:w-[80vw] md:w-[40rem] 
-               bg-gray-900 border border-purple-500/30 rounded-xl z-30 shadow-xl 
-               max-h-[65vh] overflow-y-auto p-4 transition-all duration-200`}
-  >
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-      <button
-        onClick={() => handleCategoryClick('')}
-        className={`col-span-full text-center px-3 py-2 text-white 
-                    hover:bg-purple-700 rounded-md transition-all font-semibold ${
-                      categoryFilter === '' ? 'bg-purple-600' : ''
-                    }`}
-      >
-        {t.allCategories}
-      </button>
-
-      {allCategories.map((category) => (
-        <button
-          key={category}
-          onClick={() => handleCategoryClick(category)}
-          className={`w-full px-3 py-2 text-white hover:bg-purple-700 
-                      rounded-md transition-all truncate ${
-                        categoryFilter === category ? 'bg-purple-600' : ''
-                      }`}
-        >
-          {category}
-        </button>
-      ))}
-    </div>
-  </div>      </header>
+                    <div
+                      // --- ⭐️ هذا هو التعديل الخاص بتوسيط القائمة ⭐️ ---
+                      className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
+                        isRTL ? 'md:left-0' : 'md:right-0'
+                      } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
+                    >
+                      <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                        <button
+                          onClick={() => handleCategoryClick('')}
+                          className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
+                            categoryFilter === '' ? 'bg-purple-600' : ''
+                          }`}
+                        >
+                          {t.allCategories}
+                        </button>
+                        {allCategories.map((category) => (
+                          <button
+                            key={category}
+                            onClick={() => handleCategoryClick(category)}
+                            className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
+                              categoryFilter === category
+                                ? 'bg-purple-600'
+                                : ''
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
 
       {/* --- Main Content (معدل) --- */}
       <main className="container mx-auto px-4 py-8">
