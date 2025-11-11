@@ -44,6 +44,7 @@ const translations = {
     gameList: 'Games List',
     settingsSaved: 'Settings saved!',
     back: 'Back to Site',
+    deleteConfirm: 'Are you sure you want to delete this game?',
     // ... أضف كل ترجمات لوحة التحكم
   },
   ar: {
@@ -71,6 +72,7 @@ const translations = {
     gameList: 'قائمة الألعاب',
     settingsSaved: 'تم حفظ الإعدادات!',
     back: 'العودة للموقع',
+    deleteConfirm: 'هل أنت متأكد من حذف هذه اللعبة؟',
     // ...
   },
   de: {
@@ -108,7 +110,7 @@ const getPathFromUrl = (url) => {
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
-  const lang = searchParams.get('lang') || 'en';
+  const lang = searchParams?.get('lang') || 'en';
   const t = translations[lang] || translations.en;
   const isRTL = lang === 'ar';
   const router = useRouter();
@@ -118,7 +120,7 @@ export default function DashboardPage() {
 
   // --- كل حالات لوحة التحكم ---
   const [games, setGames] = useState([]);
-  const [allGames, setAllGames] = useState([]); // (يجب تحسين هذا، لكن سننقله كما هو)
+  const [allGames, setAllGames] = useState([]);
   const [editingGame, setEditingGame] = useState(null);
   const [newGame, setNewGame] = useState({
     name: '',
@@ -140,6 +142,8 @@ export default function DashboardPage() {
   const [screenshotFiles, setScreenshotFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [dashboardSearchQuery, setDashboardSearchQuery] = useState('');
+  
+  const [gameToDelete, setGameToDelete] = useState(null); // لحالة نافذة التأكيد
 
   const [socialLinks, setSocialLinks] = useState({
     reddit: '',
@@ -157,14 +161,14 @@ export default function DashboardPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
-        router.push('/login'); // إعادة توجيه
+        router.push(`/login?lang=${lang}`); // إعادة توجيه مع اللغة
       } else {
         setUser(session.user);
         fetchDashboardData();
       }
     };
     checkUser();
-  }, [router]);
+  }, [router, lang]);
 
   async function fetchDashboardData() {
     setLoading(true);
@@ -217,7 +221,7 @@ export default function DashboardPage() {
   };
 
   const handleAddGame = async () => {
-    if (!newGame.name) return; // (استخدم رسالة خطأ أفضل)
+    if (!newGame.name) return;
     setIsUploading(true);
     let imageUrl = '';
     if (imageFile) {
@@ -233,9 +237,13 @@ export default function DashboardPage() {
       ...newGame,
       image: imageUrl,
       screenshots: screenshotUrls,
+      // التأكد من أن الأرقام هي أرقام
+      visits: parseInt(newGame.visits) || 0,
+      rating: parseFloat(newGame.rating) || 0,
+      rating_count: parseInt(newGame.rating_count) || 0,
     };
 
-    const { data, error } = await supabase.from('games').insert([gameData]);
+    const { error } = await supabase.from('games').insert([gameData]);
     if (error) {
       console.error('Error adding game:', error.message);
     } else {
@@ -264,6 +272,11 @@ export default function DashboardPage() {
 
     let imageUrl = editingGame.image;
     if (imageFile) {
+      // حذف الصورة القديمة إذا تم رفع واحدة جديدة
+      if(editingGame.image) {
+        const oldPath = getPathFromUrl(editingGame.image);
+        if(oldPath) await supabase.storage.from('game-images').remove([oldPath]);
+      }
       imageUrl = await handleImageUpload(imageFile);
     }
 
@@ -273,14 +286,20 @@ export default function DashboardPage() {
       screenshotUrls = [...screenshotUrls, ...newUrls];
     }
     setIsUploading(false);
+    
+    // التأكد من أن الأرقام هي أرقام
+    const updatedGameData = {
+      ...editingGame,
+      image: imageUrl,
+      screenshots: screenshotUrls,
+      visits: parseInt(editingGame.visits) || 0,
+      rating: parseFloat(editingGame.rating) || 0,
+      rating_count: parseInt(editingGame.rating_count) || 0,
+    };
 
     const { data, error } = await supabase
       .from('games')
-      .update({
-        ...editingGame,
-        image: imageUrl,
-        screenshots: screenshotUrls,
-      })
+      .update(updatedGameData)
       .eq('id', editingGame.id);
 
     if (error) {
@@ -292,21 +311,19 @@ export default function DashboardPage() {
       fetchDashboardData(); // إعادة المزامنة
     }
   };
-
-  const handleDeleteGame = async (game) => {
-    // استخدم نافذة تأكيد أفضل بدلاً من confirm
-    // if (!confirm(`Are you sure you want to delete ${game.name}?`)) {
-    //   return;
-    // }
-
+  
+  // دالة الحذف الفعلية
+  const confirmDeleteGame = async () => {
+    if (!gameToDelete) return;
+    
     // 1. حذف الصور
     const filesToDelete = [];
-    if (game.image) {
-      const path = getPathFromUrl(game.image);
+    if (gameToDelete.image) {
+      const path = getPathFromUrl(gameToDelete.image);
       if (path) filesToDelete.push(path);
     }
-    if (game.screenshots && game.screenshots.length > 0) {
-      game.screenshots.forEach((url) => {
+    if (gameToDelete.screenshots && gameToDelete.screenshots.length > 0) {
+      gameToDelete.screenshots.forEach((url) => {
         const path = getPathFromUrl(url);
         if (path) filesToDelete.push(path);
       });
@@ -325,13 +342,14 @@ export default function DashboardPage() {
     const { error: dbError } = await supabase
       .from('games')
       .delete()
-      .eq('id', game.id);
+      .eq('id', gameToDelete.id);
 
     if (dbError) {
       console.error('Error deleting game:', dbError.message);
     } else {
       fetchDashboardData(); // إعادة المزامنة
     }
+    setGameToDelete(null); // إغلاق نافذة التأكيد
   };
 
   const handleSaveSettings = async () => {
@@ -350,12 +368,12 @@ export default function DashboardPage() {
 
   // --- دوال مساعدة لإدارة القوائم ---
   const handleAddCategory = (isEdit) => {
-    const category = isEdit ? editCategory : newCategory;
+    const category = (isEdit ? editCategory : newCategory).trim();
     if (category) {
       if (isEdit) {
         setEditingGame({
           ...editingGame,
-          categories: [...editingGame.categories, category],
+          categories: [...(editingGame.categories || []), category],
         });
         setEditCategory('');
       } else {
@@ -376,14 +394,21 @@ export default function DashboardPage() {
       setNewGame({ ...newGame, categories: updatedCategories });
     }
   };
+  
+  const handleRemoveScreenshot = (indexToRemove) => {
+      // لا نحذف من الـ storage هنا، فقط من القائمة
+      // الحذف من الـ storage يمكن إضافته كـ "ميزة" لاحقاً
+      const updatedScreenshots = editingGame.screenshots.filter((_, index) => index !== indexToRemove);
+      setEditingGame({ ...editingGame, screenshots: updatedScreenshots });
+  };
 
   const handleAddLanguage = (isEdit) => {
-    const lang = isEdit ? editLanguage : newLanguage;
+    const lang = (isEdit ? editLanguage : newLanguage).trim();
     if (lang) {
       if (isEdit) {
         setEditingGame({
           ...editingGame,
-          languages: [...editingGame.languages, lang],
+          languages: [...(editingGame.languages || []), lang],
         });
         setEditLanguage('');
       } else {
@@ -414,7 +439,7 @@ export default function DashboardPage() {
         allGames.filter(
           (game) =>
             game.name.toLowerCase().includes(query.toLowerCase()) ||
-            game.description.toLowerCase().includes(query.toLowerCase())
+            (game.description && game.description.toLowerCase().includes(query.toLowerCase()))
         )
       );
     } else {
@@ -581,7 +606,7 @@ export default function DashboardPage() {
                   <input
                     type="file"
                     multiple
-                    onChange={(e) => setScreenshotFiles(e.target.files)}
+                    onChange={(e) => setScreenshotFiles(Array.from(e.target.files))}
                     className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
                   />
                 </div>
@@ -603,7 +628,42 @@ export default function DashboardPage() {
                       }
                       className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
                     />
-                    {/* (أضف حقول Mac, Linux, Android هنا بنفس الطريقة) */}
+                     <input
+                      type="text"
+                      placeholder="Mac"
+                      value={newGame.links.mac}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          links: { ...newGame.links, mac: e.target.value },
+                        })
+                      }
+                      className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                    />
+                     <input
+                      type="text"
+                      placeholder="Linux"
+                      value={newGame.links.linux}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          links: { ...newGame.links, linux: e.target.value },
+                        })
+                      }
+                      className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                    />
+                     <input
+                      type="text"
+                      placeholder="Android"
+                      value={newGame.links.android}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          links: { ...newGame.links, android: e.target.value },
+                        })
+                      }
+                      className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                    />
                   </div>
                 </div>
                 {/* Stats */}
@@ -761,7 +821,7 @@ export default function DashboardPage() {
                       <Edit2 className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteGame(game)}
+                      onClick={() => setGameToDelete(game)} // فتح نافذة التأكيد
                       className="bg-red-600 text-white p-2 rounded-lg"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -801,7 +861,20 @@ export default function DashboardPage() {
                       className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
                     />
                   </div>
-                  {/* (أضف بقية الحقول هنا: الوصف، التصنيفات، اللغات...) */}
+                  {/* Description */}
+                  <div>
+                    <label className="block mb-2 text-gray-300 text-sm">
+                      {t.description}
+                    </label>
+                    <textarea
+                      value={editingGame.description}
+                      onChange={(e) =>
+                        setEditingGame({ ...editingGame, description: e.target.value })
+                      }
+                      rows="4"
+                      className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                    ></textarea>
+                  </div>
                   {/* Categories */}
                   <div>
                     <label className="block mb-2 text-gray-300 text-sm">
@@ -822,7 +895,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {editingGame.categories.map((cat, index) => (
+                      {(editingGame.categories || []).map((cat, index) => (
                         <span
                           key={index}
                           className="flex items-center gap-2 bg-purple-500/30 text-purple-200 px-3 py-1 rounded-full"
@@ -836,11 +909,44 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   </div>
+                  {/* Supported Languages */}
+                 <div>
+                  <label className="block mb-2 text-gray-300 text-sm">
+                    {t.supportedLanguages}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editLanguage}
+                      onChange={(e) => setEditLanguage(e.target.value)}
+                      className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                    />
+                    <button
+                      onClick={() => handleAddLanguage(true)}
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+                    >
+                      {t.addLanguage}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(editingGame.languages || []).map((lang, index) => (
+                      <span
+                        key={index}
+                        className="flex items-center gap-2 bg-gray-500/30 text-gray-200 px-3 py-1 rounded-full"
+                      >
+                        {lang}
+                        <X
+                          className="w-4 h-4 cursor-pointer"
+                          onClick={() => handleRemoveLanguage(index, true)}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                </div>
                 </div>
 
                 {/* Right Column */}
                 <div className="space-y-4">
-                  {/* (أضف حقول الصور، لقطات الشاشة، الروابط، والإحصائيات هنا) */}
                   {/* Cover Image */}
                   <div>
                     <label className="block mb-2 text-gray-300 text-sm">
@@ -851,6 +957,130 @@ export default function DashboardPage() {
                       onChange={(e) => setImageFile(e.target.files[0])}
                       className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
                     />
+                  </div>
+                   {/* Screenshots */}
+                  <div>
+                    <label className="block mb-2 text-gray-300 text-sm">
+                      {t.screenshots}
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={(e) => setScreenshotFiles(Array.from(e.target.files))}
+                      className="w-full text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                    />
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {(editingGame.screenshots || []).map((ssUrl, index) => (
+                            <div key={index} className="relative">
+                                <img src={ssUrl} className="w-20 h-20 object-cover rounded-md" />
+                                <button onClick={() => handleRemoveScreenshot(index)} className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-0.5">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                  </div>
+                  {/* Links */}
+                  <div>
+                    <label className="block mb-2 text-gray-300 text-sm">
+                      {t.downloadLinks}
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Windows"
+                        value={editingGame.links?.windows || ''}
+                        onChange={(e) =>
+                          setEditingGame({
+                            ...editingGame,
+                            links: { ...editingGame.links, windows: e.target.value },
+                          })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                       <input
+                        type="text"
+                        placeholder="Mac"
+                        value={editingGame.links?.mac || ''}
+                        onChange={(e) =>
+                          setEditingGame({
+                            ...editingGame,
+                            links: { ...editingGame.links, mac: e.target.value },
+                          })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                       <input
+                        type="text"
+                        placeholder="Linux"
+                        value={editingGame.links?.linux || ''}
+                        onChange={(e) =>
+                          setEditingGame({
+                            ...editingGame,
+                            links: { ...editingGame.links, linux: e.target.value },
+                          })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                       <input
+                        type="text"
+                        placeholder="Android"
+                        value={editingGame.links?.android || ''}
+                        onChange={(e) =>
+                          setEditingGame({
+                            ...editingGame,
+                            links: { ...editingGame.links, android: e.target.value },
+                          })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                  </div>
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block mb-2 text-gray-300 text-sm">
+                        {t.visits}
+                      </label>
+                      <input
+                        type="number"
+                        value={editingGame.visits}
+                        onChange={(e) =>
+                          setEditingGame({ ...editingGame, visits: e.target.value })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-2 text-gray-300 text-sm">
+                        {t.rating}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={editingGame.rating}
+                        onChange={(e) =>
+                          setEditingGame({ ...editingGame, rating: e.target.value })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-2 text-gray-300 text-sm">
+                        {t.ratingCount}
+                      </label>
+                      <input
+                        type="number"
+                        value={editingGame.rating_count}
+                        onChange={(e) =>
+                          setEditingGame({
+                            ...editingGame,
+                            rating_count: e.target.value,
+                          })
+                        }
+                        className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -873,6 +1103,34 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+        
+        {/* --- نافذة تأكيد الحذف --- */}
+        {gameToDelete && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+             <div
+              className="bg-gray-800 border border-purple-500/30 rounded-xl p-8 w-full max-w-md"
+              dir={isRTL ? 'rtl' : 'ltr'}
+            >
+              <h2 className="text-xl font-bold text-white mb-4">{t.deleteConfirm}</h2>
+              <p className="text-gray-300 mb-6">{gameToDelete.name}</p>
+              <div className="flex items-center justify-end gap-4">
+                <button
+                  onClick={() => setGameToDelete(null)}
+                  className="bg-gray-600 text-white px-6 py-2 rounded-lg"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={confirmDeleteGame}
+                  className="bg-red-600 text-white px-6 py-2 rounded-lg"
+                >
+                  {t.delete}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );

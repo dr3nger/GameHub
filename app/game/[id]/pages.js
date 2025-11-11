@@ -67,6 +67,12 @@ async function getGame(id) {
     .select('*')
     .eq('id', id)
     .single();
+    
+  // تحديث الزيارات
+  if (game) {
+    await supabase.rpc('increment_visits', { game_id: id });
+  }
+  
   if (error) console.error(error.message);
   return game;
 }
@@ -99,11 +105,13 @@ export default async function GamePage({ params, searchParams }) {
   const lang = searchParams.lang || 'en';
   const t = translations[lang] || translations.en;
   const game = await getGame(params.id);
-  const relatedGames = await getRelatedGames(game.categories, game.id);
 
   if (!game) {
     return <div>Game not found</div>;
   }
+  
+  const relatedGames = await getRelatedGames(game.categories, game.id);
+
 
   const isRTL = lang === 'ar';
 
@@ -233,11 +241,60 @@ export default async function GamePage({ params, searchParams }) {
                   <span className="font-semibold">{t.windows}</span>
                 </a>
               )}
-              {/* (أضف بقية أزرار التحميل هنا) */}
+               {game.links.mac && (
+                <a
+                  href={formatWebUrl(game.links.mac)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 p-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all"
+                >
+                  <Apple className="w-6 h-6" />
+                  <span className="font-semibold">{t.mac}</span>
+                </a>
+              )}
+               {game.links.linux && (
+                <a
+                  href={formatWebUrl(game.links.linux)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 p-4 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-all"
+                >
+                  <Bot className="w-6 h-6" />
+                  <span className="font-semibold">{t.linux}</span>
+                </a>
+              )}
+               {game.links.android && (
+                <a
+                  href={formatWebUrl(game.links.android)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 p-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+                >
+                  <Smartphone className="w-6 h-6" />
+                  <span className="font-semibold">{t.android}</span>
+                </a>
+              )}
             </div>
           </div>
         )}
-        {/* (أضف قسم الألعاب المشابهة هنا) */}
+        
+        {/* قسم الألعاب المشابهة */}
+        {relatedGames.length > 0 && (
+          <div className="mt-12">
+             <h3 className="text-2xl font-bold text-white mb-4">
+              {t.relatedGames}
+            </h3>
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* ملاحظة: مكون GameCard يتوقع `t` و `lang`
+                  ولكننا هنا في صفحة اللعبة، قد لا تكون هذه المتغيرات
+                  متاحة بنفس الشكل. للتبسيط، سنمرر `t` الحالية.
+                */}
+                {relatedGames.map((relatedGame) => (
+                  <GameCard key={relatedGame.id} game={relatedGame} t={t} lang={lang} />
+                ))}
+             </div>
+          </div>
+        )}
       </div>
     </main>
   );

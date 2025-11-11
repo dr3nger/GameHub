@@ -31,7 +31,7 @@ const translations = {
 };
 
 export default function LoginPage({ searchParams }) {
-  const lang = searchParams.lang || 'en';
+  const lang = searchParams?.lang || 'en';
   const t = translations[lang] || translations.en;
   const isRTL = lang === 'ar';
   const router = useRouter();
