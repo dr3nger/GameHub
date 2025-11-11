@@ -1,4 +1,4 @@
-import './globals.css'; // تأكد من وجود ملف app/globals.css
+import '@/styles/globals.css'; // تم إصلاح المسار هنا
 
 // بيانات الموقع - يتم ضبطها هنا مرة واحدة
 export const metadata = {
