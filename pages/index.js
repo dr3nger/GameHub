@@ -43,7 +43,7 @@ import { v4 as uuidv4 } from 'uuid';
 // ... (كود الترجمة Translations لا يتغير) ...
 const translations = {
   en: {
-    siteName: 'GameHub',
+    siteName: 'porn4games',
     search: 'Search games...',
     addGame: 'Add Game',
     dashboard: 'Dashboard',
@@ -114,7 +114,7 @@ const translations = {
     addLanguageBtn: 'Add Language',
   },
   ar: {
-    siteName: 'GameHub',
+    siteName: 'porn4games',
     search: 'ابحث عن الألعاب...',
     addGame: 'إضافة لعبة',
     dashboard: 'لوحة التحكم',
@@ -185,7 +185,7 @@ const translations = {
     addLanguageBtn: 'إضافة لغة',
   },
   de: {
-    siteName: 'SpielHub',
+    siteName: 'porn4games',
     search: 'Spiele suchen...',
     addGame: 'Spiel hinzufügen',
     dashboard: 'Dashboard',
