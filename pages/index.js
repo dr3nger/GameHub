@@ -8,7 +8,6 @@ import {
   Trash2,
   Save,
   X,
-  Gamepad2,
   ArrowLeft,
   Download,
   Laptop,
@@ -39,6 +38,27 @@ import {
 import { supabase } from '@/utils/supabaseClient'; // <-- ⭐️ المسار الصحيح لـ Vercel
 // استيراد UUID
 import { v4 as uuidv4 } from 'uuid';
+
+// --- ⭐️ مكون الأيقونة المخصصة ⭐️ ---
+// 1. ضع الأيقونة (مثل logo.png) في مجلد 'public'
+// 2. قم بتغيير 'placeholder-icon.png' إلى اسم ملفك (مثل '/logo.png')
+const CustomGameIcon = ({ className }) => {
+  return (
+    <img
+      src="/logo.png" // <-- ⭐️ تم التعديل
+      alt="Site Logo"
+      className={className}
+      // لإضافة تحكم أفضل في الحجم مع الحفاظ على النسبة
+      style={{ objectFit: 'contain' }}
+      onError={(e) => {
+        // احتياطي في حال لم يتم العثور على الصورة
+        e.target.onerror = null; 
+        e.target.src = "https://placehold.co/40x40/4a0e71/ffffff?text=LOGO";
+      }}
+    />
+  );
+};
+// --- ⭐️ نهاية مكون الأيقونة المخصصة ⭐️ ---
 
 // ... (كود الترجمة Translations لا يتغير) ...
 const translations = {
@@ -1256,7 +1276,7 @@ export default function Home() {
     setGames(allGames);
   };
   
-  // (بقية الدوال المساعدة لا تتغير)
+// ... (بقية الدوال المساعدة لا تتغير)
 
   const getRelatedGames = () => {
     if (!selectedGame) return [];
@@ -1308,7 +1328,7 @@ export default function Home() {
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         <div className="flex items-center gap-3 animate-pulse">
-          <Gamepad2 className="w-12 h-12 text-purple-400" />
+          <CustomGameIcon className="w-12 h-12 text-purple-400" />
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
             {t.siteName}
           </h1>
@@ -1358,7 +1378,7 @@ export default function Home() {
               }}
               className="flex items-center gap-3 order-1"
             >
-              <Gamepad2 className="w-8 h-8 text-purple-400" />
+              <CustomGameIcon className="w-8 h-8 text-purple-400" />
               <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
                 {t.siteName}
               </h1>
