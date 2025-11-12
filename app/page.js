@@ -4,10 +4,11 @@ import GameCard from '@/components/GameCard';
 import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
 import { Loader2 } from 'lucide-react'; // لإظهار أيقونة تحميل
+import { Suspense } from 'react'; // لإضافة حدود Suspense
 
 const GAMES_PER_PAGE = 20;
 
-// (كود الترجمة - يجب نقله إلى ملف خاص به لاحقاً لكن سنبقيه هنا للتبسيط)
+// (كود الترجمة)
 const translations = {
   en: {
     siteName: 'porn4games',
@@ -133,8 +134,10 @@ async function fetchSettings() {
             .select('social_links')
             .eq('id', 1)
             .single();
-        if(settingsError) throw settingsError;
-        return settingsData.social_links;
+        if(settingsError && settingsError.code !== 'PGRST116') { // تجاهل خطأ "عدم وجود صفوف" إذا كان الجدول فارغاً
+           throw settingsError;
+        }
+        return settingsData?.social_links || { reddit: '', telegram: '', youtube: '', twitter: '', email: '' };
     } catch (error) {
          console.error("Error fetching settings: ", error.message);
         return { reddit: '', telegram: '', youtube: '', twitter: '', email: '' }; // إرجاع قيم افتراضية عند الفشل
@@ -158,6 +161,10 @@ async function fetchAllCategories() {
      }
 }
 
+// مكون الهيدر كـ "مكون عميل" منفصل ليتم تغليفه
+function PageHeader({ lang, t, allCategories, searchParams }) {
+  return <Header lang={lang} t={t} allCategories={allCategories} searchParams={searchParams} />
+}
 
 // --- المكون الرئيسي (مكون خادم) ---
 export default async function Home({ searchParams }) {
@@ -175,17 +182,18 @@ export default async function Home({ searchParams }) {
 
   return (
     <main>
-      <Header
-        lang={lang}
-        t={t}
-        allCategories={allCategories}
-        searchParams={searchParams}
-      />
+      {/* تم تغليف الهيدر بـ Suspense
+        لأن الهيدر (مكون عميل) يستخدم useSearchParams
+        وهذه الصفحة (مكون خادم) تقوم بعرضه
+      */}
+      <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
+        <PageHeader lang={lang} t={t} allCategories={allCategories} searchParams={searchParams} />
+      </Suspense>
 
       <div className="container mx-auto px-4 py-8">
         {error ? (
            <div className="col-span-full text-center text-red-400 py-12">
-             Error loading games: {error}
+             Error loading games: {error.message}
            </div>
         ) : games.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -199,11 +207,15 @@ export default async function Home({ searchParams }) {
           </div>
         )}
 
+        {/* تم تمرير searchParams إلى Pagination
+          لأنه أيضاً "مكون عميل" ويحتاج للوصول إليها
+        */}
         <Pagination
           currentPage={page}
           totalPages={totalPages}
           t={t}
           lang={lang}
+          searchParams={searchParams} 
         />
       </div>
       

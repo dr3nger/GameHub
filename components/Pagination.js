@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,20 +8,22 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 
-export default function Pagination({ currentPage, totalPages, t, lang }) {
+// 1. تمت إضافة "searchParams" كخاصية (prop)
+export default function Pagination({ currentPage, totalPages, t, lang, searchParams }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  // 2. تم حذف السطر الذي يستدعي "useSearchParams()"
   const isRTL = lang === 'ar';
 
   if (totalPages <= 1) return null;
 
   const onPageChange = (page) => {
+    // 3. الآن هذا السطر يعمل بشكل صحيح لأنه يستخدم الخاصية
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', page.toString());
     router.push(`?${params.toString()}`);
   };
 
-  // ... (نفس دالة getPageNumbers من الملف القديم) ...
+  // دالة لإنشاء أرقام الصفحات
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
@@ -103,7 +105,7 @@ export default function Pagination({ currentPage, totalPages, t, lang }) {
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        title="Next" // (تحتاج إضافة "Next" للترجمة)
+        title={t.next} // (تأكد من إضافة "next" للترجمة)
         className="px-3 py-2 bg-gray-800/50 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-600"
       >
         <ChevronRight className="w-5 h-5" />
