@@ -5,9 +5,10 @@ import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
 import { Suspense } from 'react'; // لإضافة حدود Suspense
 
-// --- 💡 الحل لمشكلة التخزين المؤقت هنا 💡 ---
-// هذا السطر يخبر Vercel أن يعيد بناء هذه الصفحة كل 10 ثوانٍ
-export const revalidate = 10;
+// --- 💡 الحل الجديد هنا 💡 ---
+// هذا السطر يخبر Vercel أن هذه الصفحة ديناميكية دائماً
+// ويجب جلب البيانات مع كل زيارة
+export const dynamic = 'force-dynamic';
 // --- نهاية الحل ---
 
 const GAMES_PER_PAGE = 20;
