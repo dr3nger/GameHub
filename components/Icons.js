@@ -1,3 +1,5 @@
+"use client"; // <-- 1. إضافة هذا السطر
+
 // هذا الملف يحتوي على الأيقونات المخصصة
 // لتنظيم الكود
 
@@ -8,7 +10,7 @@ export const CustomGameIcon = ({ className }) => {
       alt="Site Logo"
       className={className}
       style={{ objectFit: 'contain' }}
-      onError={(e) => {
+      onError={(e) => { // <-- 2. هذا السطر آمن الآن
         e.target.onerror = null;
         e.target.src = 'https://placehold.co/40x40/4a0e71/ffffff?text=LOGO';
       }}

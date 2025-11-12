@@ -3,6 +3,7 @@ import Header from '@/components/Header'; // إعادة استخدام الهي�
 import Rating from '@/components/Rating'; // مكون النجوم التفاعلي
 import GameCard from '@/components/GameCard'; // لإظهار الألعاب المشابهة
 import GameVisitTracker from '@/components/GameVisitTracker'; // <-- الملف الجديد
+import GameImage from '@/components/GameImage'; // <-- 1. استيراد المكون الجديد
 import {
   ArrowLeft,
   Eye,
@@ -152,18 +153,15 @@ export default async function GamePage({ params, searchParams }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div className="md:col-span-1">
-            <img
+            {/* 2. استخدام المكون الجديد بدلاً من <img> */}
+            <GameImage
               src={
                 game.image ||
                 'https://placehold.co/400x600/4a0e71/ffffff?text=No+Image'
               }
               alt={game.name}
               className="w-full h-auto object-cover rounded-xl shadow-lg border-2 border-purple-500/30"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src =
-                  'https://placehold.co/400x600/4a0e71/ffffff?text=Error';
-              }}
+              errorSrc="https://placehold.co/400x600/4a0e71/ffffff?text=Error"
             />
           </div>
           <div className="md:col-span-2">
