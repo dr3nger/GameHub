@@ -2,6 +2,7 @@ import { supabase } from '@/utils/supabaseClient';
 import Header from '@/components/Header'; // إعادة استخدام الهيدر
 import Rating from '@/components/Rating'; // مكون النجوم التفاعلي
 import GameCard from '@/components/GameCard'; // لإظهار الألعاب المشابهة
+import GameVisitTracker from '@/components/GameVisitTracker'; // <-- الملف الجديد
 import {
   ArrowLeft,
   Eye,
@@ -14,7 +15,7 @@ import {
 import Link from 'next/link';
 import { Suspense } from 'react'; // Suspense للهيدر
 
-// (ضع كود الترجمة الكامل هنا كما في الملف السابق)
+// (كود الترجمة الكامل)
 const translations = {
   en: {
     siteName: 'porn4games',
@@ -63,23 +64,13 @@ const translations = {
   },
 };
 
+// دالة جلب اللعبة (من الخادم) - تم حذف زيادة الزيارات من هنا
 async function getGame(id) {
   const { data: game, error } = await supabase
     .from('games')
     .select('*')
     .eq('id', id)
     .single();
-    
-  // تحديث الزيارات
-  if (game) {
-    // ملاحظة: استدعاء rpc هنا قد لا يعمل في Vercel Hobby tier
-    // إذا كان يسبب بطء، يمكن نقله إلى دالة API
-    try {
-      await supabase.rpc('increment_visits', { game_id: id });
-    } catch (rpcError) {
-      console.error('Error incrementing visits:', rpcError);
-    }
-  }
   
   if (error) console.error("Error fetching game:", error.message);
   return game;
@@ -140,10 +131,9 @@ export default async function GamePage({ params, searchParams }) {
 
   return (
     <main>
-      {/* تم تغليف الهيدر بـ Suspense
-        لأن الهيدر هو "مكون عميل" ويستخدم useSearchParams
-        بينما هذه الصفحة هي "مكون خادم"
-      */}
+      {/* زيادة الزيارات تتم الآن بأمان من جانب العميل */}
+      <GameVisitTracker game_id={params.id} />
+
       <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
         <GamePageHeader lang={lang} t={t} searchParams={searchParams} />
       </Suspense>
