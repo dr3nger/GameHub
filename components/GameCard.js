@@ -1,4 +1,4 @@
-"use client"; // <-- 1. إضافة هذا السطر
+"use client"; // <-- تأكد من وجود هذا السطر
 
 import Link from 'next/link';
 import { AppWindow, Apple, Bot, Smartphone, Star } from 'lucide-react';
@@ -17,7 +17,7 @@ export default function GameCard({ game, t }) {
           }
           alt={game.name}
           className="w-full h-full object-cover"
-          onError={(e) => { // <-- 2. هذا السطر آمن الآن
+          onError={(e) => { // <-- هذا السطر آمن الآن
             e.target.onerror = null;
             e.target.src =
               'https://placehold.co/400x300/4a0e71/ffffff?text=Error';

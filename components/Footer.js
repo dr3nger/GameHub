@@ -1,4 +1,4 @@
-"use client"; // <-- إضافة هذا السطر في الأعلى
+"use client"; // <-- تأكد من وجود هذا السطر
 
 import { Mail, Send, Twitter, Youtube } from 'lucide-react';
 import { RedditIcon } from './Icons'; // الأيقونة المخصصة التي أنشأناها

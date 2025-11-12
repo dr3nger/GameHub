@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import GameCard from '@/components/GameCard';
 import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
-import { Loader2 } from 'lucide-react'; // لإظهار أيقونة تحميل
+// import { Loader2 } from 'lucide-react'; // <-- تم حذف هذا السطر
 import { Suspense } from 'react'; // لإضافة حدود Suspense
 
 const GAMES_PER_PAGE = 20;
