@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from 'react'; // 1. إضافة Suspense
+import { Suspense, useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -17,7 +17,10 @@ import {
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-// (ضع كود الترجمة الكامل هنا كما في الملف السابق)
+// ⛔️ --- تم حذف استيراد Server Action ---
+// import { revalidateHome } from '@/app/actions'; 
+
+// (كود الترجمة - يبقى كما هو)
 const translations = {
   en: {
     dashboard: 'Dashboard',
@@ -107,6 +110,24 @@ const getPathFromUrl = (url) => {
     return null;
   }
 };
+
+// 💡 --- 1. إضافة دالة استدعاء الـ API ---
+// هذه الدالة ستستدعي الـ Route Handler الذي أنشأناه
+async function triggerRevalidation() {
+  try {
+    const res = await fetch('/api/revalidate', {
+      method: 'POST',
+    });
+    const data = await res.json();
+    if (data.revalidated) {
+      console.log('Revalidation successful:', data);
+    } else {
+      console.warn('Revalidation failed:', data);
+    }
+  } catch (error) {
+    console.error('Failed to trigger revalidation:', error);
+  }
+}
 
 // 2. تم تغيير اسم المكون الافتراضي إلى DashboardComponent
 function DashboardComponent() {
@@ -248,6 +269,7 @@ function DashboardComponent() {
     if (error) {
       console.error('Error adding game:', error.message);
     } else {
+      await triggerRevalidation(); // 💡 --- 2. استدعاء الدالة هنا ---
       fetchDashboardData(); // إعادة المزامنة
       // إعادة تعيين النموذج
       setNewGame({
@@ -306,6 +328,7 @@ function DashboardComponent() {
     if (error) {
       console.error('Error updating game:', error.message);
     } else {
+      await triggerRevalidation(); // 💡 --- 3. استدعاء الدالة هنا ---
       setEditingGame(null);
       setImageFile(null);
       setScreenshotFiles([]);
@@ -348,6 +371,7 @@ function DashboardComponent() {
     if (dbError) {
       console.error('Error deleting game:', dbError.message);
     } else {
+      await triggerRevalidation(); // 💡 --- 4. استدعاء الدالة هنا ---
       fetchDashboardData(); // إعادة المزامنة
     }
     setGameToDelete(null); // إغلاق نافذة التأكيد
@@ -362,6 +386,8 @@ function DashboardComponent() {
     if (error) {
       console.error('Error saving settings:', error.message);
     } else {
+      // (اختياري) يمكنك استدعاء triggerRevalidation() هنا إذا كانت الإعدادات تؤثر على الصفحة الرئيسية
+      // await triggerRevalidation(); 
       setShowSettingsSaved(true);
       setTimeout(() => setShowSettingsSaved(false), 3000);
     }
