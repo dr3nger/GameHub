@@ -1,6 +1,7 @@
 import { supabase } from '@/utils/supabaseClient';
 import Header from '@/components/Header'; // إعادة استخدام الهيدر
 import Rating from '@/components/Rating'; // مكون النجوم التفاعلي
+import GameCard from '@/components/GameCard'; // لإظهار الألعاب المشابهة
 import {
   ArrowLeft,
   Eye,
@@ -11,6 +12,7 @@ import {
   Star,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react'; // Suspense للهيدر
 
 // (ضع كود الترجمة الكامل هنا كما في الملف السابق)
 const translations = {
@@ -70,10 +72,16 @@ async function getGame(id) {
     
   // تحديث الزيارات
   if (game) {
-    await supabase.rpc('increment_visits', { game_id: id });
+    // ملاحظة: استدعاء rpc هنا قد لا يعمل في Vercel Hobby tier
+    // إذا كان يسبب بطء، يمكن نقله إلى دالة API
+    try {
+      await supabase.rpc('increment_visits', { game_id: id });
+    } catch (rpcError) {
+      console.error('Error incrementing visits:', rpcError);
+    }
   }
   
-  if (error) console.error(error.message);
+  if (error) console.error("Error fetching game:", error.message);
   return game;
 }
 
@@ -85,7 +93,7 @@ async function getRelatedGames(categories, id) {
     .contains('categories', categories)
     .neq('id', id) // لا تُظهر اللعبة نفسها
     .limit(5);
-  if (error) console.error(error.message);
+  if (error) console.error("Error fetching related games:", error.message);
   return games || [];
 }
 
@@ -101,28 +109,44 @@ const formatWebUrl = (url) => {
   return `https://${url}`;
 };
 
+// هذا المكون سيحتوي على الهيدر (الذي يستخدم searchParams)
+function GamePageHeader({ lang, t, searchParams }) {
+  // لا نحتاج لجلب التصنيفات هنا لأن الهيدر في صفحة اللعبة لا يعرضها
+  return <Header lang={lang} t={t} allCategories={[]} searchParams={searchParams} />
+}
+
 export default async function GamePage({ params, searchParams }) {
   const lang = searchParams.lang || 'en';
   const t = translations[lang] || translations.en;
+  
+  // جلب اللعبة والألعاب المشابهة
   const game = await getGame(params.id);
 
   if (!game) {
-    return <div>Game not found</div>;
+     return (
+      <main>
+        <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
+          <GamePageHeader lang={lang} t={t} searchParams={searchParams} />
+        </Suspense>
+        <div className="container mx-auto px-4 py-8 text-white text-center text-2xl">
+          Game not found.
+        </div>
+      </main>
+     );
   }
   
   const relatedGames = await getRelatedGames(game.categories, game.id);
-
-
   const isRTL = lang === 'ar';
 
   return (
     <main>
-      {/* ملاحظة: الهيدر هنا لن يعرض الفلاتر
-        لتحسينه، يجب نقل الهيدر إلى app/layout.js 
-        ولكن هذا يتطلب تعديل الهيدر ليصبح "مكون خادم"
-        وهو أمر معقد. سنبقيه هكذا للتبسيط.
+      {/* تم تغليف الهيدر بـ Suspense
+        لأن الهيدر هو "مكون عميل" ويستخدم useSearchParams
+        بينما هذه الصفحة هي "مكون خادم"
       */}
-      <Header lang={lang} t={t} allCategories={[]} searchParams={searchParams} />
+      <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
+        <GamePageHeader lang={lang} t={t} searchParams={searchParams} />
+      </Suspense>
 
       <div
         className="container mx-auto px-4 py-8 text-white"
@@ -186,7 +210,7 @@ export default async function GamePage({ params, searchParams }) {
 
             <div className="flex items-center gap-2 text-gray-400 mb-4">
               <Eye className="w-5 h-5" />
-              <span>{game.visits}</span>
+              <span>{game.visits || 0}</span>
             </div>
 
             {/* --- مكون التقييم التفاعلي --- */}
@@ -285,10 +309,6 @@ export default async function GamePage({ params, searchParams }) {
               {t.relatedGames}
             </h3>
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* ملاحظة: مكون GameCard يتوقع `t` و `lang`
-                  ولكننا هنا في صفحة اللعبة، قد لا تكون هذه المتغيرات
-                  متاحة بنفس الشكل. للتبسيط، سنمرر `t` الحالية.
-                */}
                 {relatedGames.map((relatedGame) => (
                   <GameCard key={relatedGame.id} game={relatedGame} t={t} lang={lang} />
                 ))}

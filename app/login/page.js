@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from 'react'; // 1. إضافة Suspense
 import { useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// (ضع كود الترجمة المصغر هنا)
+// (بقية الترجمات)
 const translations = {
   en: {
     adminLogin: 'Admin Login',
@@ -30,8 +31,9 @@ const translations = {
   },
 };
 
-export default function LoginPage({ searchParams }) {
-  const lang = searchParams?.lang || 'en';
+function LoginComponent() {
+  const searchParams = useSearchParams(); // 4. الآن هذا آمن
+  const lang = searchParams?.get('lang') || 'en';
   const t = translations[lang] || translations.en;
   const isRTL = lang === 'ar';
   const router = useRouter();
@@ -130,4 +132,14 @@ export default function LoginPage({ searchParams }) {
       </div>
     </div>
   );
+}
+
+// 2. هذا هو الـ Wrapper
+export default function LoginPageWrapper() {
+  return (
+    // 3. إضافة حدود الـ Suspense
+    <Suspense>
+      <LoginComponent />
+    </Suspense>
+  )
 }

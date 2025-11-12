@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react'; // 1. إضافة Suspense
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -108,8 +108,9 @@ const getPathFromUrl = (url) => {
   }
 };
 
-export default function DashboardPage() {
-  const searchParams = useSearchParams();
+// 2. تم تغيير اسم المكون الافتراضي إلى DashboardComponent
+function DashboardComponent() {
+  const searchParams = useSearchParams(); // 3. الآن هذا آمن داخل المكون المغلف
   const lang = searchParams?.get('lang') || 'en';
   const t = translations[lang] || translations.en;
   const isRTL = lang === 'ar';
@@ -803,7 +804,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center gap-4">
                     <img
-                      src={game.image || 'https://placehold.co/64x64/4a0e71/ffffff?text=...'}
+                      src={game.image || '[https://placehold.co/64x64/4a0e71/ffffff?text=](https://placehold.co/64x64/4a0e71/ffffff?text=)...'}
                       alt={game.name}
                       className="w-16 h-16 object-cover rounded-md"
                     />
@@ -1133,5 +1134,15 @@ export default function DashboardPage() {
 
       </main>
     </div>
+  );
+}
+
+// 4. هذا هو الـ Wrapper الذي يتم تصديره
+export default function DashboardPageWrapper() {
+  return (
+    // 5. إضافة حدود الـ Suspense
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-900"><Loader2 className="w-12 h-12 animate-spin text-purple-400" /></div>}>
+      <DashboardComponent />
+    </Suspense>
   );
 }
