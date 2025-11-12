@@ -14,7 +14,10 @@ export default function GameVisitTracker({ game_id }) {
       }
     };
     
-    increment();
+    // تأكد من أن game_id موجود قبل الاستدعاء
+    if (game_id) {
+      increment();
+    }
   }, [game_id]); // سيتم تشغيله مرة واحدة عند تحميل الصفحة
 
   return null; // هذا المكون لا يعرض أي شيء
