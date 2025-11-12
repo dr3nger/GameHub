@@ -3,8 +3,12 @@ import Header from '@/components/Header';
 import GameCard from '@/components/GameCard';
 import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
-// import { Loader2 } from 'lucide-react'; // <-- تم حذف هذا السطر
 import { Suspense } from 'react'; // لإضافة حدود Suspense
+
+// --- 💡 الحل لمشكلة التخزين المؤقت هنا 💡 ---
+// هذا السطر يخبر Vercel أن يعيد بناء هذه الصفحة كل 10 ثوانٍ
+export const revalidate = 10;
+// --- نهاية الحل ---
 
 const GAMES_PER_PAGE = 20;
 
