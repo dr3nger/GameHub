@@ -1,3 +1,5 @@
+"use client"; // <-- إضافة هذا السطر في الأعلى
+
 import { Mail, Send, Twitter, Youtube } from 'lucide-react';
 import { RedditIcon } from './Icons'; // الأيقونة المخصصة التي أنشأناها
 
