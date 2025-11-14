@@ -50,7 +50,6 @@ const translations = {
     settingsSaved: 'تم حفظ الإعدادات!',
     back: 'العودة للموقع',
     deleteConfirm: 'هل أنت متأكد من حذف هذه اللعبة؟',
-    // --- 💡 إضافة ترجمات جديدة ---
     addNewTag: 'أضف تاغ جديد...',
     selectTag: 'اختر تاغ...',
   },
@@ -153,7 +152,7 @@ function DashboardComponent() {
   });
   const [showSettingsSaved, setShowSettingsSaved] = useState(false);
 
-  // --- 💡 حالات جديدة للتصنيفات ---
+  // --- حالات جديدة للتصنيفات ---
   const [allCategories, setAllCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
@@ -188,7 +187,7 @@ function DashboardComponent() {
       setGames(gamesData || []);
       setAllGames(gamesData || []);
 
-      // --- 💡 جلب وفرز التصنيفات الفريدة ---
+      // --- جلب وفرز التصنيفات الفريدة ---
       const categoriesSet = new Set();
       (gamesData || []).forEach(game => {
         (game.categories || []).forEach(cat => categoriesSet.add(cat));
@@ -279,8 +278,8 @@ function DashboardComponent() {
       });
       setImageFile(null);
       setScreenshotFiles([]);
-      setShowNewCategoryInput(false); // 💡 إخفاء حقل الإدخال
-      setSelectedCategory(''); // 💡 إعادة تعيين القائمة المنسدلة
+      setShowNewCategoryInput(false); // إخفاء حقل الإدخال
+      setSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
     }
   };
 
@@ -328,8 +327,8 @@ function DashboardComponent() {
       setImageFile(null);
       setScreenshotFiles([]);
       fetchDashboardData(); // إعادة المزامنة
-      setShowEditNewCategoryInput(false); // 💡 إخفاء حقل الإدخال
-      setEditSelectedCategory(''); // 💡 إعادة تعيين القائمة المنسدلة
+      setShowEditNewCategoryInput(false); // إخفاء حقل الإدخال
+      setEditSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
     }
   };
   
@@ -392,7 +391,7 @@ function DashboardComponent() {
 
   // --- دوال مساعدة لإدارة القوائم ---
 
-  // --- 💡 دالة جديدة للتعامل مع القائمة المنسدلة ---
+  // --- دالة جديدة للتعامل مع القائمة المنسدلة ---
   const handleCategorySelectChange = (e, isEdit) => {
     const value = e.target.value;
     if (isEdit) {
@@ -545,7 +544,6 @@ function DashboardComponent() {
               <Plus className="w-6 h-6" />
               {t.addGame}
             </h2>
-            {/* (هذا هو نفس كود النموذج من الملف القديم) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-4">
@@ -588,10 +586,10 @@ function DashboardComponent() {
                     onChange={(e) => handleCategorySelectChange(e, false)}
                     className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400 mb-2"
                   >
-                    <option value="">{t.selectTag}</option>
-                    <option value="ADD_NEW" className="font-bold text-purple-300">{t.addNewTag}</option>
+                    <option value="" className="bg-gray-900 text-gray-300">{t.selectTag}</option>
+                    <option value="ADD_NEW" className="bg-gray-800 font-bold text-purple-300">{t.addNewTag}</option>
                     {allCategories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat} value={cat} className="bg-gray-800 text-white">{cat}</option>
                     ))}
                   </select>
 
@@ -971,10 +969,10 @@ function DashboardComponent() {
                       onChange={(e) => handleCategorySelectChange(e, true)}
                       className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400 mb-2"
                     >
-                      <option value="">{t.selectTag}</option>
-                      <option value="ADD_NEW" className="font-bold text-purple-300">{t.addNewTag}</option>
+                      <option value="" className="bg-gray-900 text-gray-300">{t.selectTag}</option>
+                      <option value="ADD_NEW" className="bg-gray-800 font-bold text-purple-300">{t.addNewTag}</option>
                       {allCategories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat} value={cat} className="bg-gray-800 text-white">{cat}</option>
                       ))}
                     </select>
                     
