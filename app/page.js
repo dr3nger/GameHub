@@ -5,15 +5,15 @@ import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
 import { Suspense } from 'react'; // لإضافة حدود Suspense
 
-//
-// ⛔️ --- تم حذف السطر التالي --- ⛔️
-// export const dynamic = 'force-dynamic';
-// --- نهاية الحذف ---
-//
+// --- 💡 الحل الصحيح هنا 💡 ---
+// هذا السطر يخبر Vercel أن هذه الصفحة ديناميكية دائماً
+// ويجب جلب البيانات مع كل زيارة (يمنع التخزين المؤقت)
+export const dynamic = 'force-dynamic';
+// --- نهاية الحل ---
 
 const GAMES_PER_PAGE = 20;
 
-// (كود الترجمة - يبقى كما هو)
+// (كود الترجمة)
 const translations = {
   en: {
     siteName: 'porn4games',
