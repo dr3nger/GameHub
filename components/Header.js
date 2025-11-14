@@ -170,29 +170,13 @@ export default function Header({ lang, t, allCategories, searchParams }) {
             ref={categoryDropdownRef}
             className="relative flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start"
           >
-            <button
-              onClick={() => updateQuery('sortBy', 'popular')}
-              className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
-                searchParams.sortBy === 'popular'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-300 hover:bg-white/20'
-              }`}
-            >
-              {t.popular}
-            </button>
-            <button
-              onClick={() => updateQuery('sortBy', 'new')}
-              className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
-                (searchParams.sortBy || 'new') === 'new'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-300 hover:bg-white/20'
-              }`}
-            >
-              {t.new}
-            </button>
-
-            {/* --- 💡 بداية التعديل --- */}
-            {/* إظهار زر التاغات فقط إذا كانت القائمة (allCategories) تحتوي على عناصر */}
+            {/* --- 💡 بداية الحذف ---
+              تم حذف أزرار "Popular" و "New" من هنا
+            --- 💡 نهاية الحذف ---
+            */}
+            
+            {/* --- 💡 بداية التعديل: إضافة شرط للتحقق من وجود تاغات --- */}
+            {/* سيتم إخفاء هذا القسم بالكامل إذا كانت allCategories فارغة (كما في صفحة اللعبة) */}
             {allCategories && allCategories.length > 0 && (
               <>
                 <div className="relative">
