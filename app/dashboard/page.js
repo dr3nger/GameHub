@@ -17,9 +17,6 @@ import {
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-// ⛔️ --- تم حذف استيراد Server Action ---
-// import { revalidateHome } from '@/app/actions'; 
-
 // (كود الترجمة - يبقى كما هو)
 const translations = {
   en: {
@@ -111,7 +108,6 @@ const getPathFromUrl = (url) => {
   }
 };
 
-// 💡 --- 1. إضافة دالة استدعاء الـ API ---
 // هذه الدالة ستستدعي الـ Route Handler الذي أنشأناه
 async function triggerRevalidation() {
   try {
@@ -129,9 +125,9 @@ async function triggerRevalidation() {
   }
 }
 
-// 2. تم تغيير اسم المكون الافتراضي إلى DashboardComponent
+// تم تغيير اسم المكون الافتراضي إلى DashboardComponent
 function DashboardComponent() {
-  const searchParams = useSearchParams(); // 3. الآن هذا آمن داخل المكون المغلف
+  const searchParams = useSearchParams();
   const lang = searchParams?.get('lang') || 'en';
   const t = translations[lang] || translations.en;
   const isRTL = lang === 'ar';
@@ -269,7 +265,7 @@ function DashboardComponent() {
     if (error) {
       console.error('Error adding game:', error.message);
     } else {
-      await triggerRevalidation(); // 💡 --- 2. استدعاء الدالة هنا ---
+      await triggerRevalidation(); // استدعاء الدالة هنا
       fetchDashboardData(); // إعادة المزامنة
       // إعادة تعيين النموذج
       setNewGame({
@@ -328,7 +324,7 @@ function DashboardComponent() {
     if (error) {
       console.error('Error updating game:', error.message);
     } else {
-      await triggerRevalidation(); // 💡 --- 3. استدعاء الدالة هنا ---
+      await triggerRevalidation(); // استدعاء الدالة هنا
       setEditingGame(null);
       setImageFile(null);
       setScreenshotFiles([]);
@@ -371,7 +367,7 @@ function DashboardComponent() {
     if (dbError) {
       console.error('Error deleting game:', dbError.message);
     } else {
-      await triggerRevalidation(); // 💡 --- 4. استدعاء الدالة هنا ---
+      await triggerRevalidation(); // استدعاء الدالة هنا
       fetchDashboardData(); // إعادة المزامنة
     }
     setGameToDelete(null); // إغلاق نافذة التأكيد
@@ -1172,4 +1168,4 @@ export default function DashboardPageWrapper() {
     </Suspense>
   );
 }
-}
+// 
