@@ -191,50 +191,58 @@ export default function Header({ lang, t, allCategories, searchParams }) {
               {t.new}
             </button>
 
-            <div className="relative">
-              <button
-                onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold transition-all text-gray-300 hover:bg-white/20"
-              >
-                <span>
-                  {t.tags}
-                  {searchParams.category && `: ${searchParams.category}`}
-                </span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${ isCategoryDropdownOpen ? 'rotate-180' : '' }`} />
-              </button>
-            </div>
-
-            {isCategoryDropdownOpen && (
-              <div
-                className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
-                  isRTL ? 'md:left-0' : 'md:right-0'
-                } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
-              >
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+            {/* --- 💡 بداية التعديل --- */}
+            {/* إظهار زر التاغات فقط إذا كانت القائمة (allCategories) تحتوي على عناصر */}
+            {allCategories && allCategories.length > 0 && (
+              <>
+                <div className="relative">
                   <button
-                    onClick={() => updateQuery('category', null)}
-                    className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
-                      !searchParams.category ? 'bg-purple-600' : ''
-                    }`}
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold transition-all text-gray-300 hover:bg-white/20"
                   >
-                    {t.allCategories}
+                    <span>
+                      {t.tags}
+                      {searchParams.category && `: ${searchParams.category}`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${ isCategoryDropdownOpen ? 'rotate-180' : '' }`} />
                   </button>
-                  {allCategories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => updateQuery('category', category)}
-                      className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
-                        searchParams.category === category
-                          ? 'bg-purple-600'
-                          : ''
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
                 </div>
-              </div>
+
+                {isCategoryDropdownOpen && (
+                  <div
+                    className={`absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 ${
+                      isRTL ? 'md:left-0' : 'md:right-0'
+                    } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
+                  >
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                      <button
+                        onClick={() => updateQuery('category', null)}
+                        className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
+                          !searchParams.category ? 'bg-purple-600' : ''
+                        }`}
+                      >
+                        {t.allCategories}
+                      </button>
+                      {allCategories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => updateQuery('category', category)}
+                          className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
+                            searchParams.category === category
+                              ? 'bg-purple-600'
+                              : ''
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
+            {/* --- 💡 نهاية التعديل --- */}
+
           </div>
         </div>
       </div>
