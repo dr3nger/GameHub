@@ -17,12 +17,39 @@ import {
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-// (كود الترجمة - يبقى كما هو)
+// (كود الترجمة)
 const translations = {
   en: {
-    // ... (translations remain the same)
+    dashboard: 'Dashboard',
+    addGame: 'Add Game',
+    siteSettings: 'Site Settings',
+    gameName: 'Game Name',
+    description: 'Description',
+    categories: 'Categories',
+    addCategory: 'Add Category',
+    supportedLanguages: 'Supported Languages',
+    addLanguage: 'Add Language',
+    coverImage: 'Cover Image',
+    uploading: 'Uploading...',
+    screenshots: 'Screenshots',
+    downloadLinks: 'Download Links',
+    visits: 'Visits',
+    rating: 'Rating',
+    ratingCount: 'Rating Count',
+    save: 'Save',
+    cancel: 'Cancel',
+    searchGames: 'Search games...',
+    edit: 'Edit',
+    delete: 'Delete',
+    gameList: 'Games List',
+    settingsSaved: 'Settings saved!',
+    back: 'Back to Site',
+    deleteConfirm: 'Are you sure you want to delete this game?',
     addNewTag: 'Add new tag...',
     selectTag: 'Select a tag...',
+    // --- 💡 إضافة ترجمات جديدة ---
+    addNewLanguage: 'Add new language...',
+    selectLanguage: 'Select a language...',
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -52,11 +79,41 @@ const translations = {
     deleteConfirm: 'هل أنت متأكد من حذف هذه اللعبة؟',
     addNewTag: 'أضف تاغ جديد...',
     selectTag: 'اختر تاغ...',
+    // --- 💡 إضافة ترجمات جديدة ---
+    addNewLanguage: 'أضف لغة جديدة...',
+    selectLanguage: 'اختر لغة...',
   },
   de: {
-    // ... (translations remain the same)
+    dashboard: 'Dashboard',
+    addGame: 'Spiel hinzufügen',
+    siteSettings: 'Seiteneinstellungen',
+    gameName: 'Spielname',
+    description: 'Beschreibung',
+    categories: 'Kategorien',
+    addCategory: 'Kategorie hinzufügen',
+    supportedLanguages: 'Unterstützte Sprachen',
+    addLanguage: 'Sprache hinzufügen',
+    coverImage: 'Coverbild',
+    uploading: 'Lädt hoch...',
+    screenshots: 'Screenshots',
+    downloadLinks: 'Download-Links',
+    visits: 'Besuche',
+    rating: 'Bewertung',
+    ratingCount: 'Anzahl Bewertungen',
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    searchGames: 'Spiele suchen...',
+    edit: 'Bearbeiten',
+    delete: 'Löschen',
+    gameList: 'Spieleliste',
+    settingsSaved: 'Einstellungen gespeichert!',
+    back: 'Zurück zur Seite',
+    deleteConfirm: 'Sind Sie sicher, dass Sie dieses Spiel löschen möchten?',
     addNewTag: 'Neuen Tag hinzufügen...',
     selectTag: 'Tag auswählen...',
+    // --- 💡 إضافة ترجمات جديدة ---
+    addNewLanguage: 'Neue Sprache hinzufügen...',
+    selectLanguage: 'Sprache auswählen...',
   },
 };
 
@@ -159,6 +216,13 @@ function DashboardComponent() {
   const [editSelectedCategory, setEditSelectedCategory] = useState('');
   const [showEditNewCategoryInput, setShowEditNewCategoryInput] = useState(false);
 
+  // --- 💡 حالات جديدة للغات ---
+  const [allLanguages, setAllLanguages] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [showNewLanguageInput, setShowNewLanguageInput] = useState(false);
+  const [editSelectedLanguage, setEditSelectedLanguage] = useState('');
+  const [showEditNewLanguageInput, setShowEditNewLanguageInput] = useState(false);
+
 
   // --- التحقق من المصادقة ---
   useEffect(() => {
@@ -189,11 +253,21 @@ function DashboardComponent() {
 
       // --- جلب وفرز التصنيفات الفريدة ---
       const categoriesSet = new Set();
+      // --- 💡 جلب وفرز اللغات الفريدة ---
+      const languagesSet = new Set();
+      
       (gamesData || []).forEach(game => {
         (game.categories || []).forEach(cat => categoriesSet.add(cat));
+        // 💡 إضافة اللغات
+        (game.languages || []).forEach(lang => languagesSet.add(lang));
       });
+      
       const sortedCategories = Array.from(categoriesSet).sort((a, b) => a.localeCompare(b));
       setAllCategories(sortedCategories);
+      
+      // 💡 فرز وتعيين اللغات
+      const sortedLanguages = Array.from(languagesSet).sort((a, b) => a.localeCompare(b));
+      setAllLanguages(sortedLanguages);
 
     } catch (error) {
       console.error('Error fetching games:', error.message);
@@ -280,6 +354,8 @@ function DashboardComponent() {
       setScreenshotFiles([]);
       setShowNewCategoryInput(false); // إخفاء حقل الإدخال
       setSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
+      setShowNewLanguageInput(false); // 💡 إخفاء حقل الإدخال
+      setSelectedLanguage(''); // 💡 إعادة تعيين القائمة المنسدلة
     }
   };
 
@@ -329,6 +405,8 @@ function DashboardComponent() {
       fetchDashboardData(); // إعادة المزامنة
       setShowEditNewCategoryInput(false); // إخفاء حقل الإدخال
       setEditSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
+      setShowEditNewLanguageInput(false); // 💡 إخفاء حقل الإدخال
+      setEditSelectedLanguage(''); // 💡 إعادة تعيين القائمة المنسدلة
     }
   };
   
@@ -461,6 +539,41 @@ function DashboardComponent() {
       // الحذف من الـ storage يمكن إضافته كـ "ميزة" لاحقاً
       const updatedScreenshots = editingGame.screenshots.filter((_, index) => index !== indexToRemove);
       setEditingGame({ ...editingGame, screenshots: updatedScreenshots });
+  };
+
+  // --- 💡 دالة جديدة للغات ---
+  const handleLanguageSelectChange = (e, isEdit) => {
+    const value = e.target.value;
+    if (isEdit) {
+      setEditSelectedLanguage(value);
+      if (value === 'ADD_NEW') {
+        setShowEditNewLanguageInput(true);
+      } else if (value) {
+        if (!editingGame.languages.includes(value)) {
+           setEditingGame({
+            ...editingGame,
+            languages: [...(editingGame.languages || []), value],
+          });
+        }
+        setEditSelectedLanguage('');
+        setShowEditNewLanguageInput(false);
+      } else {
+        setShowEditNewLanguageInput(false);
+      }
+    } else {
+      setSelectedLanguage(value);
+      if (value === 'ADD_NEW') {
+        setShowNewLanguageInput(true);
+      } else if (value) {
+        if (!newGame.languages.includes(value)) {
+          setNewGame({ ...newGame, languages: [...newGame.languages, value] });
+        }
+        setSelectedLanguage('');
+        setShowNewLanguageInput(false);
+      } else {
+        setShowNewLanguageInput(false);
+      }
+    }
   };
 
   const handleAddLanguage = (isEdit) => {
@@ -632,25 +745,48 @@ function DashboardComponent() {
                     ))}
                   </div>
                 </div>
-                {/* Supported Languages */}
+                {/* --- 💡 قسم اللغات المعدل --- */}
                 <div>
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.supportedLanguages}
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newLanguage}
-                      onChange={(e) => setNewLanguage(e.target.value)}
-                      className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                    />
-                    <button
-                      onClick={() => handleAddLanguage(false)}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg"
-                    >
-                      {t.addLanguage}
-                    </button>
-                  </div>
+                  {/* القائمة المنسدلة للغات */}
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => handleLanguageSelectChange(e, false)}
+                    className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400 mb-2"
+                  >
+                    <option value="" className="bg-gray-900 text-gray-300">{t.selectLanguage}</option>
+                    <option value="ADD_NEW" className="bg-gray-800 font-bold text-purple-300">{t.addNewLanguage}</option>
+                    {allLanguages.map((lang) => (
+                      <option key={lang} value={lang} className="bg-gray-800 text-white">{lang}</option>
+                    ))}
+                  </select>
+
+                  {/* حقل الإدخال النصي (يظهر عند اختيار "إضافة جديد") */}
+                  {showNewLanguageInput && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newLanguage}
+                        onChange={(e) => setNewLanguage(e.target.value)}
+                        placeholder={t.addNewLanguage}
+                        className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                      />
+                      <button
+                        onClick={() => {
+                          handleAddLanguage(false);
+                          setShowNewLanguageInput(false);
+                          setSelectedLanguage('');
+                        }}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+                      >
+                        {t.addLanguage}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* عرض اللغات المضافة */}
                   <div className="flex flex-wrap gap-2 mt-2">
                     {newGame.languages.map((lang, index) => (
                       <span
@@ -1015,25 +1151,48 @@ function DashboardComponent() {
                       ))}
                     </div>
                   </div>
-                  {/* Supported Languages */}
+                  {/* --- 💡 قسم اللغات المعدل (لنافذة التعديل) --- */}
                  <div>
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.supportedLanguages}
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editLanguage}
-                      onChange={(e) => setEditLanguage(e.target.value)}
-                      className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
-                    />
-                    <button
-                      onClick={() => handleAddLanguage(true)}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg"
-                    >
-                      {t.addLanguage}
-                    </button>
-                  </div>
+                  {/* القائمة المنسدلة للغات */}
+                  <select
+                    value={editSelectedLanguage}
+                    onChange={(e) => handleLanguageSelectChange(e, true)}
+                    className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400 mb-2"
+                  >
+                    <option value="" className="bg-gray-900 text-gray-300">{t.selectLanguage}</option>
+                    <option value="ADD_NEW" className="bg-gray-800 font-bold text-purple-300">{t.addNewLanguage}</option>
+                    {allLanguages.map((lang) => (
+                      <option key={lang} value={lang} className="bg-gray-800 text-white">{lang}</option>
+                    ))}
+                  </select>
+                  
+                  {/* حقل الإدخال النصي (يظهر عند اختيار "إضافة جديد") */}
+                  {showEditNewLanguageInput && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editLanguage}
+                        onChange={(e) => setEditLanguage(e.target.value)}
+                        placeholder={t.addNewLanguage}
+                        className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                      />
+                      <button
+                        onClick={() => {
+                          handleAddLanguage(true);
+                          setShowEditNewLanguageInput(false);
+                          setEditSelectedLanguage('');
+                        }}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+                      >
+                        {t.addLanguage}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* عرض اللغات المضافة */}
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(editingGame.languages || []).map((lang, index) => (
                       <span
@@ -1217,7 +1376,7 @@ function DashboardComponent() {
               className="bg-gray-800 border border-purple-500/30 rounded-xl p-8 w-full max-w-md"
               dir={isRTL ? 'rtl' : 'ltr'}
             >
-              <h2 className="text-xl font-bold text-white mb-4">{t.deleteConfirm}</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{t.deleteConfirm}</h2>
               <p className="text-gray-300 mb-6">{gameToDelete.name}</p>
               <div className="flex items-center justify-end gap-4">
                 <button
