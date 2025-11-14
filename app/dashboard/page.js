@@ -20,32 +20,9 @@ import { v4 as uuidv4 } from 'uuid';
 // (كود الترجمة - يبقى كما هو)
 const translations = {
   en: {
-    dashboard: 'Dashboard',
-    addGame: 'Add Game',
-    siteSettings: 'Site Settings',
-    gameName: 'Game Name',
-    description: 'Description',
-    categories: 'Categories',
-    addCategory: 'Add Category',
-    supportedLanguages: 'Supported Languages',
-    addLanguage: 'Add Language',
-    coverImage: 'Cover Image',
-    uploading: 'Uploading...',
-    screenshots: 'Screenshots',
-    downloadLinks: 'Download Links',
-    visits: 'Visits',
-    rating: 'Rating',
-    ratingCount: 'Rating Count',
-    save: 'Save',
-    cancel: 'Cancel',
-    searchGames: 'Search games...',
-    edit: 'Edit',
-    delete: 'Delete',
-    gameList: 'Games List',
-    settingsSaved: 'Settings saved!',
-    back: 'Back to Site',
-    deleteConfirm: 'Are you sure you want to delete this game?',
-    // ... أضف كل ترجمات لوحة التحكم
+    // ... (translations remain the same)
+    addNewTag: 'Add new tag...',
+    selectTag: 'Select a tag...',
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -73,10 +50,14 @@ const translations = {
     settingsSaved: 'تم حفظ الإعدادات!',
     back: 'العودة للموقع',
     deleteConfirm: 'هل أنت متأكد من حذف هذه اللعبة؟',
-    // ...
+    // --- 💡 إضافة ترجمات جديدة ---
+    addNewTag: 'أضف تاغ جديد...',
+    selectTag: 'اختر تاغ...',
   },
   de: {
-    // ...
+    // ... (translations remain the same)
+    addNewTag: 'Neuen Tag hinzufügen...',
+    selectTag: 'Tag auswählen...',
   },
 };
 
@@ -172,6 +153,14 @@ function DashboardComponent() {
   });
   const [showSettingsSaved, setShowSettingsSaved] = useState(false);
 
+  // --- 💡 حالات جديدة للتصنيفات ---
+  const [allCategories, setAllCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [editSelectedCategory, setEditSelectedCategory] = useState('');
+  const [showEditNewCategoryInput, setShowEditNewCategoryInput] = useState(false);
+
+
   // --- التحقق من المصادقة ---
   useEffect(() => {
     const checkUser = async () => {
@@ -190,7 +179,6 @@ function DashboardComponent() {
 
   async function fetchDashboardData() {
     setLoading(true);
-    // (هذا هو نفس كود جلب البيانات القديم)
     try {
       const { data: gamesData, error: gamesError } = await supabase
         .from('games')
@@ -199,6 +187,15 @@ function DashboardComponent() {
       if (gamesError) throw gamesError;
       setGames(gamesData || []);
       setAllGames(gamesData || []);
+
+      // --- 💡 جلب وفرز التصنيفات الفريدة ---
+      const categoriesSet = new Set();
+      (gamesData || []).forEach(game => {
+        (game.categories || []).forEach(cat => categoriesSet.add(cat));
+      });
+      const sortedCategories = Array.from(categoriesSet).sort((a, b) => a.localeCompare(b));
+      setAllCategories(sortedCategories);
+
     } catch (error) {
       console.error('Error fetching games:', error.message);
     }
@@ -282,6 +279,8 @@ function DashboardComponent() {
       });
       setImageFile(null);
       setScreenshotFiles([]);
+      setShowNewCategoryInput(false); // 💡 إخفاء حقل الإدخال
+      setSelectedCategory(''); // 💡 إعادة تعيين القائمة المنسدلة
     }
   };
 
@@ -329,6 +328,8 @@ function DashboardComponent() {
       setImageFile(null);
       setScreenshotFiles([]);
       fetchDashboardData(); // إعادة المزامنة
+      setShowEditNewCategoryInput(false); // 💡 إخفاء حقل الإدخال
+      setEditSelectedCategory(''); // 💡 إعادة تعيين القائمة المنسدلة
     }
   };
   
@@ -390,6 +391,44 @@ function DashboardComponent() {
   };
 
   // --- دوال مساعدة لإدارة القوائم ---
+
+  // --- 💡 دالة جديدة للتعامل مع القائمة المنسدلة ---
+  const handleCategorySelectChange = (e, isEdit) => {
+    const value = e.target.value;
+    if (isEdit) {
+      setEditSelectedCategory(value);
+      if (value === 'ADD_NEW') {
+        setShowEditNewCategoryInput(true);
+      } else if (value) {
+        // أضف التاغ الموجود مسبقاً
+        if (!editingGame.categories.includes(value)) {
+           setEditingGame({
+            ...editingGame,
+            categories: [...(editingGame.categories || []), value],
+          });
+        }
+        setEditSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
+        setShowEditNewCategoryInput(false);
+      } else {
+        setShowEditNewCategoryInput(false);
+      }
+    } else {
+      setSelectedCategory(value);
+      if (value === 'ADD_NEW') {
+        setShowNewCategoryInput(true);
+      } else if (value) {
+        // أضف التاغ الموجود مسبقاً
+        if (!newGame.categories.includes(value)) {
+          setNewGame({ ...newGame, categories: [...newGame.categories, value] });
+        }
+        setSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
+        setShowNewCategoryInput(false);
+      } else {
+        setShowNewCategoryInput(false);
+      }
+    }
+  };
+
   const handleAddCategory = (isEdit) => {
     const category = (isEdit ? editCategory : newCategory).trim();
     if (category) {
@@ -538,25 +577,48 @@ function DashboardComponent() {
                     className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
                   ></textarea>
                 </div>
-                {/* Categories */}
+                {/* --- 💡 قسم التصنيفات المعدل --- */}
                 <div>
                   <label className="block mb-2 text-gray-300 text-sm">
                     {t.categories}
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                    />
-                    <button
-                      onClick={() => handleAddCategory(false)}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg"
-                    >
-                      {t.addCategory}
-                    </button>
-                  </div>
+                  {/* القائمة المنسدلة */}
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => handleCategorySelectChange(e, false)}
+                    className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400 mb-2"
+                  >
+                    <option value="">{t.selectTag}</option>
+                    <option value="ADD_NEW" className="font-bold text-purple-300">{t.addNewTag}</option>
+                    {allCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+
+                  {/* حقل الإدخال النصي (يظهر عند اختيار "إضافة جديد") */}
+                  {showNewCategoryInput && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        placeholder={t.addNewTag}
+                        className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400"
+                      />
+                      <button
+                        onClick={() => {
+                          handleAddCategory(false);
+                          setShowNewCategoryInput(false); // إخفاء الحقل بعد الإضافة
+                          setSelectedCategory(''); // إعادة تعيين القائمة
+                        }}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+                      >
+                        {t.addCategory}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* عرض التصنيفات المضافة */}
                   <div className="flex flex-wrap gap-2 mt-2">
                     {newGame.categories.map((cat, index) => (
                       <span
@@ -898,25 +960,48 @@ function DashboardComponent() {
                       className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
                     ></textarea>
                   </div>
-                  {/* Categories */}
+                  {/* --- 💡 قسم التصنيفات المعدل (لنافذة التعديل) --- */}
                   <div>
                     <label className="block mb-2 text-gray-300 text-sm">
                       {t.categories}
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={editCategory}
-                        onChange={(e) => setEditCategory(e.target.value)}
-                        className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
-                      />
-                      <button
-                        onClick={() => handleAddCategory(true)}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-lg"
-                      >
-                        {t.addCategory}
-                      </button>
-                    </div>
+                    {/* القائمة المنسدلة */}
+                    <select
+                      value={editSelectedCategory}
+                      onChange={(e) => handleCategorySelectChange(e, true)}
+                      className="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400 mb-2"
+                    >
+                      <option value="">{t.selectTag}</option>
+                      <option value="ADD_NEW" className="font-bold text-purple-300">{t.addNewTag}</option>
+                      {allCategories.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    
+                    {/* حقل الإدخال النصي (يظهر عند اختيار "إضافة جديد") */}
+                    {showEditNewCategoryInput && (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editCategory}
+                          onChange={(e) => setEditCategory(e.target.value)}
+                          placeholder={t.addNewTag}
+                          className="flex-grow bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 text-white"
+                        />
+                        <button
+                          onClick={() => {
+                            handleAddCategory(true);
+                            setShowEditNewCategoryInput(false); // إخفاء الحقل بعد الإضافة
+                            setEditSelectedCategory(''); // إعادة تعيين القائمة
+                          }}
+                          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+                        >
+                          {t.addCategory}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* عرض التصنيفات المضافة */}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {(editingGame.categories || []).map((cat, index) => (
                         <span
@@ -1168,4 +1253,3 @@ export default function DashboardPageWrapper() {
     </Suspense>
   );
 }
-// 
