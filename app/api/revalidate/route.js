@@ -4,17 +4,30 @@ import { NextResponse } from 'next/server';
 // دالة POST للتعامل مع طلبات إعادة التحقق
 export async function POST(request) {
   try {
-    // إعادة التحقق من الصفحة الرئيسية
-    revalidatePath('/');
+    // 💡 1. قراءة ID اللعبة من الطلب
+    // الكود في 'app/dashboard/page.js' يرسل هذا الـ ID الآن
+    const { gameId } = await request.json();
 
-    // (اختياري) يمكنك إضافة صفحات أخرى هنا إذا أردت
-    // revalidatePath('/game/[id]', 'page');
+    const revalidatedPaths = [];
+
+    // 💡 2. تحديث الصفحة الرئيسية (دائماً)
+    revalidatePath('/');
+    revalidatedPaths.push('/');
+
+    // 💡 3. تحديث صفحة اللعبة (فقط إذا تم إرسال ID)
+    if (gameId) {
+      const gamePath = `/game/${gameId}`;
+      revalidatePath(gamePath);
+      revalidatedPaths.push(gamePath);
+    }
 
     // إرجاع رد ناجح
     return NextResponse.json({
       revalidated: true,
       now: Date.now(),
+      revalidatedPaths: revalidatedPaths, // <-- لإعطاء تأكيد
     });
+    
   } catch (err) {
     // إرجاع رد في حالة الفشل
     console.error('Error revalidating:', err);
