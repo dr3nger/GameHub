@@ -12,6 +12,16 @@ export const metadata = {
   // --- 💡 إضافة SEO: الكلمات المفتاحية ---
   keywords: ['porn games', 'free sex games', 'sex animations', 'filter games', 'cartoon porn', 'hentai games', 'online porn games', '3d sex games', 'adult sex games', 'sexgames', 'porngames', 'porn flash games', 'hentai', 'xxx games', 'nsfw games', 'ai sex game', 'ai porn game', 'mobile porn game', 'sex simulator', '18+ RPG games', 'adult games', 'horny game'],
   // --- نهاية الإضافة ---
+
+  // --- 💡💡 إضافة كود التحقق من جوجل 💡💡 ---
+  //
+  //  <<<<<!! استبدل "YOUR_VERIFICATION_CODE_HERE" بالكود الخاص بك من جوجل !!>>>>>
+  //
+  verification: {
+    google: 'NkgcraDasEkBlEGxR_teZYt5LX1R1xvfWMLwBWvrsLg',
+  },
+  // --- نهاية الإضافة ---
+
   icons: {
     icon: '/logo.png',
   },
