@@ -1,48 +1,73 @@
 import { supabase } from '@/utils/supabaseClient';
 
-// --- 💡 إضافة جديدة: إجبار الملف على أن يكون ديناميكياً ---
+// --- 💡 إجبار الملف على أن يكون ديناميكياً ---
 export const revalidate = 0;
-// --- نهاية الإضافة ---
 
 const URL = 'https://porn4games.vercel.app';
 
-export default async function sitemap() {
+// --- 💡 دالة لإنشاء نص الـ XML ---
+function generateSitemapXml(games) {
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>`;
+  xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
+
+  // 1. إضافة الصفحة الرئيسية
+  xml += `
+    <url>
+      <loc>${URL}</loc>
+      <lastmod>${new Date().toISOString()}</lastmod>
+      <priority>1.0</priority>
+    </url>
+  `;
+
+  // 2. إضافة كل الألعاب
+  (games || []).forEach((game) => {
+    const lastModified = new Date(game.created_at).toISOString();
+    xml += `
+      <url>
+        <loc>${URL}/game/${game.id}</loc>
+        <lastmod>${lastModified}</lastmod>
+        <priority>0.8</priority>
+      </url>
+    `;
+  });
+
+  xml += `</urlset>`;
+  return xml;
+}
+
+// --- 💡 1. تم تغيير اسم الدالة إلى GET (لحل خطأ 405) ---
+export async function GET() {
   try {
-    // 1. جلب كل الألعاب من قاعدة البيانات
-    // 💡 --- تم التعديل هنا: إزالة updated_at ---
-    // هذا يضمن نجاح الطلب حتى لو كان الحقل غير موجود
+    // جلب كل الألعاب من قاعدة البيانات
     const { data: games, error } = await supabase
       .from('games')
-      .select('id, created_at'); // جلب الحقول المطلوبة فقط
+      .select('id, created_at');
 
     if (error) {
-      console.error('Sitemap fetch error:', error.message); // 💡 إضافة لوج للخطأ
+      console.error('Sitemap fetch error:', error.message);
       throw new Error(error.message);
     }
 
-    // 2. تحويل بيانات الألعاب إلى مسارات
-    const gamePaths = (games || []).map((game) => {
-      // 💡 --- تم التعديل هنا: استخدام created_at دائماً ---
-      const lastModified = new Date(game.created_at).toISOString();
+    // إنشاء نص الـ XML
+    const xmlString = generateSitemapXml(games);
 
-      return {
-        url: `${URL}/game/${game.id}`,
-        lastModified: lastModified,
-      };
+    // --- 💡 2. إرجاع رد (Response) صحيح ---
+    return new Response(xmlString, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 's-maxage=0, stale-while-revalidate', // التحكم بالكاش
+      },
     });
 
-    // 3. إضافة الصفحات الثابتة (مثل الرئيسية)
-    const routes = [
-      {
-        url: URL,
-        lastModified: new Date().toISOString(),
-      },
-    ];
-
-    // 4. دمج الصفحات الثابتة والديناميكية وإرجاعها
-    return [...routes, ...gamePaths];
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    return [];
+    // إرجاع خطأ في الخادم
+    return new Response('<error>Could not generate sitemap</error>', {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/xml',
+      },
+    });
   }
 }
