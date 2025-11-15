@@ -1,12 +1,11 @@
 import { supabase } from '@/utils/supabaseClient';
 
-// 💡 غير هذا إلى رابط موقعك الفعلي
-const URL = 'https://your-domain.com';
+// 💡 تم التحديث إلى نطاق موقعك الفعلي
+const URL = 'https://porn4games.vercel.app';
 
 export default async function sitemap() {
   try {
     // 1. جلب كل الألعاب من قاعدة البيانات
-    // 💡💡💡 هذا هو السطر الذي تم إصلاحه 💡💡💡
     const { data: games, error } = await supabase
       .from('games')
       .select('id, created_at'); // جلب الحقول المطلوبة فقط
