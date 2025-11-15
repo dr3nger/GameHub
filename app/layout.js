@@ -1,4 +1,5 @@
-import '@/styles/globals.css'; // تم إصلاح المسار هنا
+import '@/styles/globals.css';
+import { AuthProvider } from '@/context/AuthContext'; // <-- 1. استيراد المزود
 
 // بيانات الموقع - يتم ضبطها هنا مرة واحدة
 export const metadata = {
@@ -15,7 +16,10 @@ export default function RootLayout({ children }) {
       <body
         className={`min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white`}
       >
-        {children}
+        {/* 2. تغليف الموقع بالمزود */}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

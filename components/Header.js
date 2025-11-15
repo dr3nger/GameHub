@@ -11,10 +11,10 @@ import {
   LogIn,
 } from 'lucide-react';
 import { supabase } from '@/utils/supabaseClient';
-import { CustomGameIcon } from '@/components/Icons'; // سنقوم بإنشائه
+import { CustomGameIcon } from '@/components/Icons';
+import { useAuth } from '@/context/AuthContext'; // <-- 1. استيراد الـ Hook الجديد
 
 // (ضع كود الترجمة المصغر هنا)
-// --- 💡 تم إضافة ترجمة الأزرار ---
 const translations = {
   en: { 
     siteName: 'porn4games', 
@@ -61,21 +61,13 @@ export default function Header({ lang, t, allCategories, searchParams }) {
   const categoryDropdownRef = useRef(null);
   const isRTL = lang === 'ar';
 
-  // --- حالة المصادقة ---
-  const [user, setUser] = useState(null);
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  // --- 💡 2. استهلاك الحالة من الـ Context ---
+  // تم حذف useState و useEffect القديمين
+  const { user } = useAuth(); // (يمكنك إضافة 'loading' إذا أردت إظهار مؤشر تحميل)
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setUser(null);
+    // 💡 لا حاجة لـ setUser(null)، الـ Context سيتولى الأمر
     router.push('/'); // العودة للرئيسية
   };
   
@@ -152,6 +144,7 @@ export default function Header({ lang, t, allCategories, searchParams }) {
               <ChevronDown className={`absolute top-2.5 ${ isRTL ? 'left-3' : 'right-3' } w-5 h-5 text-gray-300 pointer-events-none`} />
             </div>
 
+            {/* --- 💡 3. الكود هنا سيعمل كما كان، لكنه الآن يقرأ من الـ Context --- */}
             {user ? (
               <>
                 <Link href="/dashboard" title={t.dashboard} className="p-2 rounded-lg font-semibold transition-all bg-white/10 text-gray-300 hover:bg-purple-600 hover:text-white">
@@ -205,10 +198,9 @@ export default function Header({ lang, t, allCategories, searchParams }) {
             className="relative flex items-center gap-2 md:gap-4 w-full md:w-auto order-4 md:order-3 justify-center md:justify-start"
           >
             
-            {/* --- 💡 بداية التعديل: الأزرار والتاغات داخل الشرط --- */}
+            {/* --- (بقية كود الفلاتر يبقى كما هو) --- */}
             {allCategories && allCategories.length > 0 && (
               <>
-                {/* --- 💡 تمت إعادة هذه الأزرار --- */}
                 <button
                   onClick={() => updateQuery('sortBy', 'popular')}
                   className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
@@ -229,7 +221,6 @@ export default function Header({ lang, t, allCategories, searchParams }) {
                 >
                   {t.new}
                 </button>
-                {/* --- 💡 نهاية إعادة الأزرار --- */}
 
                 <div className="relative">
                   <button
@@ -277,8 +268,7 @@ export default function Header({ lang, t, allCategories, searchParams }) {
                 )}
               </>
             )}
-            {/* --- 💡 نهاية التعديل --- */}
-
+            
           </div>
         </div>
       </div>
