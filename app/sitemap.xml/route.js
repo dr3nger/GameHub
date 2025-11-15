@@ -1,7 +1,6 @@
 import { supabase } from '@/utils/supabaseClient';
 
 // --- 💡 إضافة جديدة: إجبار الملف على أن يكون ديناميكياً ---
-// هذا يمنع Vercel من تخزين نسخة "فاشلة" مؤقتاً
 export const revalidate = 0;
 // --- نهاية الإضافة ---
 
@@ -10,9 +9,11 @@ const URL = 'https://porn4games.vercel.app';
 export default async function sitemap() {
   try {
     // 1. جلب كل الألعاب من قاعدة البيانات
+    // 💡 --- تم التعديل هنا: إزالة updated_at ---
+    // هذا يضمن نجاح الطلب حتى لو كان الحقل غير موجود
     const { data: games, error } = await supabase
       .from('games')
-      .select('id, created_at, updated_at'); // جلب الحقول المطلوبة
+      .select('id, created_at'); // جلب الحقول المطلوبة فقط
 
     if (error) {
       console.error('Sitemap fetch error:', error.message); // 💡 إضافة لوج للخطأ
@@ -21,10 +22,8 @@ export default async function sitemap() {
 
     // 2. تحويل بيانات الألعاب إلى مسارات
     const gamePaths = (games || []).map((game) => {
-      // 💡 استخدام 'updated_at' إن وجد، وإلا 'created_at'
-      const lastModified = game.updated_at
-        ? new Date(game.updated_at).toISOString()
-        : new Date(game.created_at).toISOString();
+      // 💡 --- تم التعديل هنا: استخدام created_at دائماً ---
+      const lastModified = new Date(game.created_at).toISOString();
 
       return {
         url: `${URL}/game/${game.id}`,
@@ -44,8 +43,6 @@ export default async function sitemap() {
     return [...routes, ...gamePaths];
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    // 💡 إرجاع مصفوفة فارغة بدلاً من صفحة رئيسية مكررة عند الخطأ
-    // هذا قد يساعد جوجل على فهم أن هناك خطأ
     return [];
   }
 }
