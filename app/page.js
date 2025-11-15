@@ -5,10 +5,9 @@ import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
 import { Suspense } from 'react'; // لإضافة حدود Suspense
 
-// --- 💡 الحل الصحيح هنا 💡 ---
-// هذا السطر يخبر Vercel أن هذه الصفحة ديناميكية دائماً
-// ويجب جلب البيانات مع كل زيارة (يمنع التخزين المؤقت)
-export const dynamic = 'force-dynamic';
+// --- 💡 تم حل المشكلة 💡 ---
+// تم حذف سطر "export const dynamic = 'force-dynamic';"
+// ستعتمد الصفحة الآن على "revalidatePath" للتحديثات (ISR)
 // --- نهاية الحل ---
 
 const GAMES_PER_PAGE = 20;
@@ -193,7 +192,7 @@ export default async function Home({ searchParams }) {
       */}
       <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
         <PageHeader lang={lang} t={t} allCategories={allCategories} searchParams={searchParams} />
-      </Suspense>
+      </SuspMense>
 
       <div className="container mx-auto px-4 py-8">
         {error ? (
