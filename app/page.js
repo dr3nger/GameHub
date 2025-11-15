@@ -192,7 +192,7 @@ export default async function Home({ searchParams }) {
       */}
       <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
         <PageHeader lang={lang} t={t} allCategories={allCategories} searchParams={searchParams} />
-      </SuspMense>
+      </Suspense> {/* <-- 💡💡💡 تم إصلاح الخطأ المطبعي هنا 💡💡💡 */}
 
       <div className="container mx-auto px-4 py-8">
         {error ? (
