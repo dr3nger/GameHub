@@ -1,10 +1,8 @@
 import { supabase } from '@/utils/supabaseClient';
-import Header from '@/components/Header'; // إعادة استخدام الهيدر
-// تم حذف الاستيرادات التي نُقلت إلى المكون الجديد
-import GameVisitTracker from '@/components/GameVisitTracker'; // <-- الملف الجديد
-import GamePageClient from '@/components/GamePageClient'; // <-- 1. استيراد المكون الجديد
-// تم حذف استيراد lucide-react و Link
-import { Suspense } from 'react'; // Suspense للهيدر
+import Header from '@/components/Header'; 
+import GameVisitTracker from '@/components/GameVisitTracker'; 
+import GamePageClient from '@/components/GamePageClient'; 
+import { Suspense } from 'react'; 
 
 // (كود الترجمة الكامل - يبقى كما هو)
 const translations = {
@@ -55,6 +53,61 @@ const translations = {
   },
 };
 
+// --- 💡 إضافة SEO 💡 ---
+// دالة لإنشاء البيانات الوصفية الديناميكية
+export async function generateMetadata({ params, searchParams }) {
+  const game = await getGame(params.id);
+
+  if (!game) {
+    return {
+      title: 'Game Not Found',
+      description: 'The game you are looking for does not exist.',
+    };
+  }
+
+  // اقتصاص الوصف ليكون مناسباً لـ SEO (عادة 155-160 حرف)
+  const description = game.description 
+    ? game.description.substring(0, 155) + '...'
+    : 'No description available for this game.';
+
+  // --- 💡 إضافة SEO: الكلمات المفتاحية ---
+  // إنشاء كلمات مفتاحية ديناميكية من اسم اللعبة وتصنيفاتها
+  const dynamicKeywords = [game.name, `download ${game.name}`, `free ${game.name}`];
+  if (game.categories && game.categories.length > 0) {
+    dynamicKeywords.push(...game.categories);
+  }
+  // --- نهاية الإضافة ---
+
+  return {
+    title: game.name, // سيستخدم القالب ليصبح "Game Name | porn4games"
+    description: description,
+    // --- 💡 إضافة SEO: الكلمات المفتاحية ---
+    keywords: dynamicKeywords,
+    // --- نهاية الإضافة ---
+    openGraph: {
+      title: game.name,
+      description: description,
+      images: [
+        {
+          url: game.image || '/logo.png', // استخدم صورة اللعبة
+          width: 400,
+          height: 600,
+          alt: game.name,
+        },
+      ],
+      type: 'article', // يمكنك اعتباره "مقالة" عن اللعبة
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: game.name,
+      description: description,
+      images: [game.image || '/logo.png'],
+    },
+  };
+}
+// --- نهاية إضافة SEO ---
+
+
 // دالة جلب اللعبة (من الخادم) - تبقى كما هي
 async function getGame(id) {
   const { data: game, error } = await supabase
@@ -100,7 +153,6 @@ async function getRelatedGames(categories, id) {
     .from('games')
     .select('*') 
     // --- 💡💡💡 هذا هو السطر الذي تم إصلاحه 💡💡💡 ---
-    // .contains('categories', categories) // <-- هذا كان الخطأ (يطلب *كل* التاغات)
     .overlaps('categories', categories) // <-- هذا هو الإصلاح (يطلب *تاغ واحد مشترك* على الأقل)
     // --- نهاية الإصلاح ---
     .neq('id', id) // استثناء اللعبة الحالية

@@ -5,10 +5,29 @@ import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
 import { Suspense } from 'react'; // لإضافة حدود Suspense
 
-// --- 💡 تم حل المشكلة 💡 ---
-// تم حذف سطر "export const dynamic = 'force-dynamic';"
-// ستعتمد الصفحة الآن على "revalidatePath" للتحديثات (ISR)
-// --- نهاية الحل ---
+// --- 💡 إضافة SEO 💡 ---
+// إضافة بيانات وصفية ثابتة ومخصصة للصفحة الرئيسية
+// هذه البيانات ستستخدم "قالب" العنوان من layout.js
+export const metadata = {
+  title: 'Porn Games, Free Adult Sex Games, XXX Fuck Games | Porn4Games', // سيظهر كـ "Homepage | The Best Game Hub | porn4games"
+  description: 'Browse porn and sex game content made for adults. Find porn games, sex games, and new updates daily. Enjoy a simple hub for porn and sex entertainment.',
+  // --- 💡 إضافة SEO: الكلمات المفتاحية ---
+  keywords: ['porn games', 'free sex games', 'sex animations', 'filter games', 'cartoon porn', 'hentai games', 'online porn games', '3d sex games', 'adult sex games', 'sexgames', 'porngames', 'porn flash games', 'hentai', 'xxx games', 'nsfw games', 'ai sex game', 'ai porn game', 'mobile porn game', 'sex simulator', '18+ RPG games', 'adult games', 'horny game'],
+  // --- نهاية الإضافة ---
+  openGraph: {
+    title: 'porn4games | The Best Game Hub',
+    description: 'Browse the latest and most popular games.',
+    images: [
+      {
+        url: '/logo.png', // 💡 يفضل وضع رابط كامل للصورة عند النشر
+        width: 512,
+        height: 512,
+        alt: 'porn4games Logo',
+      },
+    ],
+  },
+};
+// --- نهاية إضافة SEO ---
 
 const GAMES_PER_PAGE = 20;
 
@@ -132,37 +151,37 @@ async function fetchGames(searchParams) {
 
 // جلب الإعدادات والروابط الاجتماعية
 async function fetchSettings() {
-    try {
-        const { data: settingsData, error: settingsError } = await supabase
-            .from('site_settings')
-            .select('social_links')
-            .eq('id', 1)
-            .single();
-        if(settingsError && settingsError.code !== 'PGRST116') { // تجاهل خطأ "عدم وجود صفوف" إذا كان الجدول فارغاً
-           throw settingsError;
-        }
-        return settingsData?.social_links || { reddit: '', telegram: '', youtube: '', twitter: '', email: '' };
-    } catch (error) {
-         console.error("Error fetching settings: ", error.message);
-        return { reddit: '', telegram: '', youtube: '', twitter: '', email: '' }; // إرجاع قيم افتراضية عند الفشل
+  try {
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('site_settings')
+      .select('social_links')
+      .eq('id', 1)
+      .single();
+    if (settingsError && settingsError.code !== 'PGRST116') { // تجاهل خطأ "عدم وجود صفوف" إذا كان الجدول فارغاً
+      throw settingsError;
     }
+    return settingsData?.social_links || { reddit: '', telegram: '', youtube: '', twitter: '', email: '' };
+  } catch (error) {
+    console.error("Error fetching settings: ", error.message);
+    return { reddit: '', telegram: '', youtube: '', twitter: '', email: '' }; // إرجاع قيم افتراضية عند الفشل
+  }
 }
 
 // جلب كل التصنيفات للفلتر
 async function fetchAllCategories() {
-     try {
-        const { data: categoriesData, error } = await supabase
-            .from('games')
-            .select('categories');
-        if(error) throw error;
-        const allCategories = [
-            ...new Set((categoriesData || []).flatMap((game) => game.categories || [])),
-        ].sort();
-        return allCategories;
-     } catch (error) {
-        console.error("Error fetching categories: ", error.message);
-        return [];
-     }
+  try {
+    const { data: categoriesData, error } = await supabase
+      .from('games')
+      .select('categories');
+    if (error) throw error;
+    const allCategories = [
+      ...new Set((categoriesData || []).flatMap((game) => game.categories || [])),
+    ].sort();
+    return allCategories;
+  } catch (error) {
+    console.error("Error fetching categories: ", error.message);
+    return [];
+  }
 }
 
 // مكون الهيدر كـ "مكون عميل" منفصل ليتم تغليفه
@@ -174,12 +193,12 @@ function PageHeader({ lang, t, allCategories, searchParams }) {
 export default async function Home({ searchParams }) {
   const lang = searchParams.lang || 'en';
   const page = parseInt(searchParams.page) || 1;
-  
+
   // جلب البيانات بالتوازي لتحسين الأداء
   const [gameData, socialLinks, allCategories] = await Promise.all([
-      fetchGames(searchParams),
-      fetchSettings(),
-      fetchAllCategories()
+    fetchGames(searchParams),
+    fetchSettings(),
+    fetchAllCategories()
   ]);
 
   const { games, totalPages, t, error } = gameData;
@@ -192,13 +211,13 @@ export default async function Home({ searchParams }) {
       */}
       <Suspense fallback={<header className="h-24 bg-black/30 backdrop-blur-md border-b border-purple-500/20"></header>}>
         <PageHeader lang={lang} t={t} allCategories={allCategories} searchParams={searchParams} />
-      </Suspense> {/* <-- 💡💡💡 تم إصلاح الخطأ المطبعي هنا 💡💡💡 */}
+      </Suspense>
 
       <div className="container mx-auto px-4 py-8">
         {error ? (
-           <div className="col-span-full text-center text-red-400 py-12">
-             Error loading games: {error.message}
-           </div>
+          <div className="col-span-full text-center text-red-400 py-12">
+            Error loading games: {error.message}
+          </div>
         ) : games.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {games.map((game) => (
@@ -219,10 +238,10 @@ export default async function Home({ searchParams }) {
           totalPages={totalPages}
           t={t}
           lang={lang}
-          searchParams={searchParams} 
+          searchParams={searchParams}
         />
       </div>
-      
+
       <Footer socialLinks={socialLinks} />
     </main>
   );
