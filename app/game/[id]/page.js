@@ -6,7 +6,7 @@ import GamePageClient from '@/components/GamePageClient'; // <-- 1. استيرا
 // تم حذف استيراد lucide-react و Link
 import { Suspense } from 'react'; // Suspense للهيدر
 
-// (كود الترجمة الكامل)
+// (كود الترجمة الكامل - يبقى كما هو)
 const translations = {
   en: {
     siteName: 'porn4games',
@@ -55,7 +55,7 @@ const translations = {
   },
 };
 
-// دالة جلب اللعبة (من الخادم) - تم حذف زيادة الزيارات من هنا
+// دالة جلب اللعبة (من الخادم) - تبقى كما هي
 async function getGame(id) {
   const { data: game, error } = await supabase
     .from('games')
@@ -67,19 +67,80 @@ async function getGame(id) {
   return game;
 }
 
+// --- 💡 بداية التعديل: دالة جلب الألعاب المرتبطة ---
 async function getRelatedGames(categories, id) {
-  if (!categories || categories.length === 0) return [];
-  const { data: games, error } = await supabase
-    .from('games')
-    .select('*')
-    .contains('categories', categories)
-    .neq('id', id) // لا تُظهر اللعبة نفسها
-    .limit(5);
-  if (error) console.error("Error fetching related games:", error.message);
-  return games || [];
-}
+  const MIN_COMMON_TAGS = 3; // الشرط: 3 تاغات مشتركة
+  const MAX_RESULTS = 5; // أقصى عدد للألعاب المرتبطة
+  const CANDIDATE_LIMIT = 50; // كم عدد الألعاب المرشحة لجلبها من قاعدة البيانات
 
-// تم حذف دالة formatWebUrl (نُقلت إلى المكون الجديد)
+  // إذا لم تكن هناك تاغات، أعد مصفوفة فارغة
+  if (!categories || categories.length === 0) {
+    return [];
+  }
+
+  // --- الشرط الأساسي (Fallback) ---
+  // إذا كانت اللعبة نفسها تحتوي على أقل من 3 تاغات، فمن المستحيل إيجاد 3 تاغات مشتركة
+  // لذلك، نعود للمنطق القديم (تاغ واحد مشترك على الأقل)
+  if (categories.length < MIN_COMMON_TAGS) {
+    console.warn(`Game ${id} has < ${MIN_COMMON_TAGS} tags. Falling back to 1-tag match.`);
+    const { data: games, error } = await supabase
+      .from('games')
+      .select('*')
+      .contains('categories', categories)
+      .neq('id', id)
+      .limit(MAX_RESULTS);
+    if (error) console.error("Error fetching related games (fallback):", error.message);
+    return games || [];
+  }
+
+  // --- المنطق الجديد (3+ تاغات مشتركة) ---
+
+  // الخطوة 1: جلب الألعاب "المرشحة" التي تشترك في تاغ واحد على الأقل
+  const { data: candidateGames, error } = await supabase
+    .from('games')
+    .select('*') // جلب كل البيانات للألعاب المرشحة
+    .contains('categories', categories) // .contains = (تاغ1 أو تاغ2 أو تاغ3 ...)
+    .neq('id', id) // استثناء اللعبة الحالية
+    .limit(CANDIDATE_LIMIT); // جلب 50 مرشحاً للفلترة
+
+  if (error) {
+    console.error("Error fetching related game candidates:", error.message);
+    return [];
+  }
+
+  // الخطوة 2: فلترة "المرشحين" في جافاسكريبت
+  const currentGameTags = new Set(categories); // Set للبحث السريع
+  const relatedGames = [];
+
+  for (const game of (candidateGames || [])) {
+    // تخطي إذا لم يكن للعبة تاغات
+    if (!game.categories || game.categories.length === 0) continue;
+
+    let commonTagsCount = 0;
+    const gameTags = new Set(game.categories);
+
+    // حساب عدد التاغات المشتركة
+    for (const tag of gameTags) {
+      if (currentGameTags.has(tag)) {
+        commonTagsCount++;
+      }
+    }
+
+    // الخطوة 3: التحقق إذا كانت اللعبة تطابق الشرط (3+ تاغات)
+    if (commonTagsCount >= MIN_COMMON_TAGS) {
+      relatedGames.push(game);
+    }
+
+    // الخطوة 4: التوقف عند الوصول للحد الأقصى للنتائج
+    if (relatedGames.length >= MAX_RESULTS) {
+      break;
+    }
+  }
+
+  return relatedGames;
+}
+// --- 💡 نهاية التعديل ---
+
 
 // هذا المكون سيحتوي على الهيدر (الذي يستخدم searchParams)
 function GamePageHeader({ lang, t, searchParams }) {
@@ -107,8 +168,8 @@ export default async function GamePage({ params, searchParams }) {
      );
   }
   
+  // 💡 استدعاء الدالة الجديدة. سيتم الآن جلب الألعاب حسب المنطق الجديد
   const relatedGames = await getRelatedGames(game.categories, game.id);
-  // تم حذف isRTL
 
   return (
     <main>
