@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -38,7 +38,7 @@ const translations = {
     ratingCount: 'Rating Count',
     save: 'Save',
     cancel: 'Cancel',
-    searchGames: 'Search games...',
+    searchGames: 'Search games by name or description...', // <-- تم التحديث
     edit: 'Edit',
     delete: 'Delete',
     gameList: 'Games List',
@@ -47,7 +47,6 @@ const translations = {
     deleteConfirm: 'Are you sure you want to delete this game?',
     addNewTag: 'Add new tag...',
     selectTag: 'Select a tag...',
-    // --- 💡 إضافة ترجمات جديدة ---
     addNewLanguage: 'Add new language...',
     selectLanguage: 'Select a language...',
   },
@@ -70,7 +69,7 @@ const translations = {
     ratingCount: 'عدد التقييمات',
     save: 'حفظ',
     cancel: 'إلغاء',
-    searchGames: 'ابحث في الألعاب...',
+    searchGames: 'ابحث بالاسم أو الوصف...', // <-- تم التحديث
     edit: 'تعديل',
     delete: 'حذف',
     gameList: 'قائمة الألعاب',
@@ -79,7 +78,6 @@ const translations = {
     deleteConfirm: 'هل أنت متأكد من حذف هذه اللعبة؟',
     addNewTag: 'أضف تاغ جديد...',
     selectTag: 'اختر تاغ...',
-    // --- 💡 إضافة ترجمات جديدة ---
     addNewLanguage: 'أضف لغة جديدة...',
     selectLanguage: 'اختر لغة...',
   },
@@ -102,7 +100,7 @@ const translations = {
     ratingCount: 'Anzahl Bewertungen',
     save: 'Speichern',
     cancel: 'Abbrechen',
-    searchGames: 'Spiele suchen...',
+    searchGames: 'Spiele suchen (Name oder Beschreibung)...', // <-- تم التحديث
     edit: 'Bearbeiten',
     delete: 'Löschen',
     gameList: 'Spieleliste',
@@ -111,13 +109,29 @@ const translations = {
     deleteConfirm: 'Sind Sie sicher, dass Sie dieses Spiel löschen möchten?',
     addNewTag: 'Neuen Tag hinzufügen...',
     selectTag: 'Tag auswählen...',
-    // --- 💡 إضافة ترجمات جديدة ---
     addNewLanguage: 'Neue Sprache hinzufügen...',
     selectLanguage: 'Sprache auswählen...',
   },
 };
 
-// --- دالة مساعدة لرفع الملفات (من الكود القديم) ---
+// --- 💡 دالة Debounce ---
+// هذه الدالة تؤخر تنفيذ البحث حتى يتوقف المستخدم عن الكتابة
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+
+// --- 💡 الدوال المساعدة نُقلت إلى هنا (خارج المكون) ---
+
 async function uploadFile(file, bucket) {
   if (!file) return null;
   const fileExt = file.name.split('.').pop();
@@ -132,12 +146,14 @@ async function uploadFile(file, bucket) {
   const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
   return data.publicUrl;
 }
-// --- دالة مساعدة لحذف الملفات (من الكود القديم) ---
+
 const getPathFromUrl = (url) => {
   if (!url) return null;
   try {
     const urlObj = new URL(url);
-    const parts = urlObj.pathname.split('/game-images/'); // تأكد أن 'game-images' هو اسم الحاوية
+    // 💡 تحسين: جعل اسم الحاوية ديناميكياً
+    const bucketName = 'game-images'; 
+    const parts = urlObj.pathname.split(`/${bucketName}/`); 
     return parts[1] || null;
   } catch (e) {
     console.error('Invalid URL:', url, e);
@@ -145,12 +161,18 @@ const getPathFromUrl = (url) => {
   }
 };
 
-// هذه الدالة ستستدعي الـ Route Handler الذي أنشأناه
-async function triggerRevalidation() {
+// 💡 تحسين (النقطة 3.1): الدالة تقبل ID الآن
+async function triggerRevalidation(gameId = null) {
   try {
+    // 💡 إرسال ID اللعبة في الطلب
     const res = await fetch('/api/revalidate', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ gameId }), // <-- إرسال ID اللعبة
     });
+    
     const data = await res.json();
     if (data.revalidated) {
       console.log('Revalidation successful:', data);
@@ -161,6 +183,9 @@ async function triggerRevalidation() {
     console.error('Failed to trigger revalidation:', error);
   }
 }
+
+// --- نهاية الدوال المساعدة ---
+
 
 // تم تغيير اسم المكون الافتراضي إلى DashboardComponent
 function DashboardComponent() {
@@ -175,7 +200,6 @@ function DashboardComponent() {
 
   // --- كل حالات لوحة التحكم ---
   const [games, setGames] = useState([]);
-  const [allGames, setAllGames] = useState([]);
   const [editingGame, setEditingGame] = useState(null);
   const [newGame, setNewGame] = useState({
     name: '',
@@ -196,9 +220,14 @@ function DashboardComponent() {
   const [imageFile, setImageFile] = useState(null);
   const [screenshotFiles, setScreenshotFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [dashboardSearchQuery, setDashboardSearchQuery] = useState('');
   
-  const [gameToDelete, setGameToDelete] = useState(null); // لحالة نافذة التأكيد
+  // --- 💡 حالات البحث الجديدة ---
+  const [dashboardSearchQuery, setDashboardSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  // استخدام Debounce لتأخير البحث
+  const debouncedSearchQuery = useDebounce(dashboardSearchQuery, 500); // 500ms تأخير
+  
+  const [gameToDelete, setGameToDelete] = useState(null); 
 
   const [socialLinks, setSocialLinks] = useState({
     reddit: '',
@@ -209,14 +238,12 @@ function DashboardComponent() {
   });
   const [showSettingsSaved, setShowSettingsSaved] = useState(false);
 
-  // --- حالات جديدة للتصنيفات ---
   const [allCategories, setAllCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [editSelectedCategory, setEditSelectedCategory] = useState('');
   const [showEditNewCategoryInput, setShowEditNewCategoryInput] = useState(false);
 
-  // --- 💡 حالات جديدة للغات ---
   const [allLanguages, setAllLanguages] = useState([]);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [showNewLanguageInput, setShowNewLanguageInput] = useState(false);
@@ -224,55 +251,58 @@ function DashboardComponent() {
   const [showEditNewLanguageInput, setShowEditNewLanguageInput] = useState(false);
 
 
-  // --- التحقق من المصادقة ---
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.push(`/login?lang=${lang}`); // إعادة توجيه مع اللغة
-      } else {
-        setUser(session.user);
-        fetchDashboardData();
-      }
-    };
-    checkUser();
-  }, [router, lang]);
-
-  async function fetchDashboardData() {
-    setLoading(true);
+  // --- 💡 دالة جلب الألعاب (البحث من الخادم) ---
+  const fetchGames = useCallback(async (searchQuery = '') => {
+    setIsSearching(true);
     try {
-      const { data: gamesData, error: gamesError } = await supabase
+      let query = supabase
         .from('games')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // 💡 تطبيق البحث هنا
+      if (searchQuery) {
+        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
+
+      const { data: gamesData, error: gamesError } = await query;
       if (gamesError) throw gamesError;
       setGames(gamesData || []);
-      setAllGames(gamesData || []);
+    } catch (error) {
+      console.error('Error fetching games:', error.message);
+    }
+    setIsSearching(false);
+  }, []); // useCallback لمنع إعادة تعريف الدالة
 
-      // --- جلب وفرز التصنيفات الفريدة ---
+  // --- 💡 دالة لجلب الإعدادات والتاغات (مرة واحدة) ---
+  const fetchMeta = async () => {
+    setLoading(true);
+    try {
+      // جلب التصنيفات واللغات من *كل* الألعاب (للحفاظ على القوائم المنسدلة كاملة)
+      const { data: metaData, error: metaError } = await supabase
+        .from('games')
+        .select('categories, languages');
+      if (metaError) throw metaError;
+
       const categoriesSet = new Set();
-      // --- 💡 جلب وفرز اللغات الفريدة ---
       const languagesSet = new Set();
       
-      (gamesData || []).forEach(game => {
+      (metaData || []).forEach(game => {
         (game.categories || []).forEach(cat => categoriesSet.add(cat));
-        // 💡 إضافة اللغات
         (game.languages || []).forEach(lang => languagesSet.add(lang));
       });
       
       const sortedCategories = Array.from(categoriesSet).sort((a, b) => a.localeCompare(b));
       setAllCategories(sortedCategories);
       
-      // 💡 فرز وتعيين اللغات
       const sortedLanguages = Array.from(languagesSet).sort((a, b) => a.localeCompare(b));
       setAllLanguages(sortedLanguages);
 
     } catch (error) {
-      console.error('Error fetching games:', error.message);
+      console.error('Error fetching meta:', error.message);
     }
-    // (جلب الإعدادات)
+
+    // جلب إعدادات الموقع
     try {
       const { data: settingsData, error: settingsError } = await supabase
         .from('site_settings')
@@ -286,8 +316,40 @@ function DashboardComponent() {
       console.error('Error fetching settings:', error.message);
     }
     setLoading(false);
-  }
+  };
 
+
+  // --- التحقق من المصادقة ---
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        router.push(`/login?lang=${lang}`); 
+      } else {
+        setUser(session.user);
+        // 💡 جلب البيانات الأولية
+        fetchMeta();
+        fetchGames(); // جلب كل الألعاب في البداية
+      }
+    };
+    checkUser();
+    // لا نعتمد على fetchGames هنا
+  }, [router, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // --- 💡 UseEffect للبحث (Debounced) ---
+  // هذا التأثير (Effect) سيعمل فقط عندما تتغير
+  // قيمة "debouncedSearchQuery"
+  useEffect(() => {
+    // لا تقم بالبحث إذا كان هذا هو التحميل الأولي
+    if (loading) return; 
+    
+    // استدعاء دالة البحث المعتمدة على الخادم
+    fetchGames(debouncedSearchQuery);
+    
+  }, [debouncedSearchQuery, fetchGames, loading]);
+  
   // --- دوال لوحة التحكم (CRUD) ---
 
   const handleImageUpload = async (file) => {
@@ -325,7 +387,6 @@ function DashboardComponent() {
       ...newGame,
       image: imageUrl,
       screenshots: screenshotUrls,
-      // التأكد من أن الأرقام هي أرقام
       visits: parseInt(newGame.visits) || 0,
       rating: parseFloat(newGame.rating) || 0,
       rating_count: parseInt(newGame.rating_count) || 0,
@@ -335,8 +396,9 @@ function DashboardComponent() {
     if (error) {
       console.error('Error adding game:', error.message);
     } else {
-      await triggerRevalidation(); // استدعاء الدالة هنا
-      fetchDashboardData(); // إعادة المزامنة
+      await triggerRevalidation(); // 💡 تحديث الصفحة الرئيسية
+      fetchGames(dashboardSearchQuery); // 💡 إعادة جلب الألعاب (المطابقة للبحث الحالي)
+      fetchMeta(); // 💡 تحديث قائمة التاغات واللغات
       // إعادة تعيين النموذج
       setNewGame({
         name: '',
@@ -352,10 +414,10 @@ function DashboardComponent() {
       });
       setImageFile(null);
       setScreenshotFiles([]);
-      setShowNewCategoryInput(false); // إخفاء حقل الإدخال
-      setSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
-      setShowNewLanguageInput(false); // 💡 إخفاء حقل الإدخال
-      setSelectedLanguage(''); // 💡 إعادة تعيين القائمة المنسدلة
+      setShowNewCategoryInput(false); 
+      setSelectedCategory(''); 
+      setShowNewLanguageInput(false); 
+      setSelectedLanguage(''); 
     }
   };
 
@@ -365,7 +427,6 @@ function DashboardComponent() {
 
     let imageUrl = editingGame.image;
     if (imageFile) {
-      // حذف الصورة القديمة إذا تم رفع واحدة جديدة
       if(editingGame.image) {
         const oldPath = getPathFromUrl(editingGame.image);
         if(oldPath) await supabase.storage.from('game-images').remove([oldPath]);
@@ -380,7 +441,6 @@ function DashboardComponent() {
     }
     setIsUploading(false);
     
-    // التأكد من أن الأرقام هي أرقام
     const updatedGameData = {
       ...editingGame,
       image: imageUrl,
@@ -398,19 +458,20 @@ function DashboardComponent() {
     if (error) {
       console.error('Error updating game:', error.message);
     } else {
-      await triggerRevalidation(); // استدعاء الدالة هنا
+      // 💡 تحسين (النقطة 3.1): إرسال ID اللعبة
+      await triggerRevalidation(editingGame.id); 
       setEditingGame(null);
       setImageFile(null);
       setScreenshotFiles([]);
-      fetchDashboardData(); // إعادة المزامنة
-      setShowEditNewCategoryInput(false); // إخفاء حقل الإدخال
-      setEditSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
-      setShowEditNewLanguageInput(false); // 💡 إخفاء حقل الإدخال
-      setEditSelectedLanguage(''); // 💡 إعادة تعيين القائمة المنسدلة
+      fetchGames(dashboardSearchQuery); // 💡 إعادة جلب الألعاب
+      fetchMeta(); // 💡 تحديث قائمة التاغات واللغات
+      setShowEditNewCategoryInput(false); 
+      setEditSelectedCategory(''); 
+      setShowEditNewLanguageInput(false); 
+      setEditSelectedLanguage(''); 
     }
   };
   
-  // دالة الحذف الفعلية
   const confirmDeleteGame = async () => {
     if (!gameToDelete) return;
     
@@ -445,10 +506,11 @@ function DashboardComponent() {
     if (dbError) {
       console.error('Error deleting game:', dbError.message);
     } else {
-      await triggerRevalidation(); // استدعاء الدالة هنا
-      fetchDashboardData(); // إعادة المزامنة
+      // 💡 تحسين (النقطة 3.1): إرسال ID اللعبة
+      await triggerRevalidation(gameToDelete.id); 
+      fetchGames(dashboardSearchQuery); // 💡 إعادة جلب الألعاب
     }
-    setGameToDelete(null); // إغلاق نافذة التأكيد
+    setGameToDelete(null); 
   };
 
   const handleSaveSettings = async () => {
@@ -460,8 +522,6 @@ function DashboardComponent() {
     if (error) {
       console.error('Error saving settings:', error.message);
     } else {
-      // (اختياري) يمكنك استدعاء triggerRevalidation() هنا إذا كانت الإعدادات تؤثر على الصفحة الرئيسية
-      // await triggerRevalidation(); 
       setShowSettingsSaved(true);
       setTimeout(() => setShowSettingsSaved(false), 3000);
     }
@@ -469,7 +529,6 @@ function DashboardComponent() {
 
   // --- دوال مساعدة لإدارة القوائم ---
 
-  // --- دالة جديدة للتعامل مع القائمة المنسدلة ---
   const handleCategorySelectChange = (e, isEdit) => {
     const value = e.target.value;
     if (isEdit) {
@@ -477,14 +536,13 @@ function DashboardComponent() {
       if (value === 'ADD_NEW') {
         setShowEditNewCategoryInput(true);
       } else if (value) {
-        // أضف التاغ الموجود مسبقاً
         if (!editingGame.categories.includes(value)) {
            setEditingGame({
             ...editingGame,
             categories: [...(editingGame.categories || []), value],
           });
         }
-        setEditSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
+        setEditSelectedCategory(''); 
         setShowEditNewCategoryInput(false);
       } else {
         setShowEditNewCategoryInput(false);
@@ -494,11 +552,10 @@ function DashboardComponent() {
       if (value === 'ADD_NEW') {
         setShowNewCategoryInput(true);
       } else if (value) {
-        // أضف التاغ الموجود مسبقاً
         if (!newGame.categories.includes(value)) {
           setNewGame({ ...newGame, categories: [...newGame.categories, value] });
         }
-        setSelectedCategory(''); // إعادة تعيين القائمة المنسدلة
+        setSelectedCategory(''); 
         setShowNewCategoryInput(false);
       } else {
         setShowNewCategoryInput(false);
@@ -519,6 +576,10 @@ function DashboardComponent() {
         setNewGame({ ...newGame, categories: [...newGame.categories, category] });
         setNewCategory('');
       }
+      // 💡 إضافة التاغ الجديد للقائمة المنسدلة فوراً
+      if (!allCategories.includes(category)) {
+        setAllCategories([...allCategories, category].sort((a,b) => a.localeCompare(b)));
+      }
     }
   };
 
@@ -535,13 +596,10 @@ function DashboardComponent() {
   };
   
   const handleRemoveScreenshot = (indexToRemove) => {
-      // لا نحذف من الـ storage هنا، فقط من القائمة
-      // الحذف من الـ storage يمكن إضافته كـ "ميزة" لاحقاً
       const updatedScreenshots = editingGame.screenshots.filter((_, index) => index !== indexToRemove);
       setEditingGame({ ...editingGame, screenshots: updatedScreenshots });
   };
 
-  // --- 💡 دالة جديدة للغات ---
   const handleLanguageSelectChange = (e, isEdit) => {
     const value = e.target.value;
     if (isEdit) {
@@ -589,6 +647,10 @@ function DashboardComponent() {
         setNewGame({ ...newGame, languages: [...newGame.languages, lang] });
         setNewLanguage('');
       }
+      // 💡 إضافة اللغة الجديدة للقائمة المنسدلة فوراً
+       if (!allLanguages.includes(lang)) {
+        setAllLanguages([...allLanguages, lang].sort((a,b) => a.localeCompare(b)));
+      }
     }
   };
 
@@ -604,21 +666,9 @@ function DashboardComponent() {
     }
   };
 
-  // فلترة الألعاب في لوحة التحكم
+  // 💡 البحث يتم الآن عبر useEffect
   const handleDashboardSearch = (e) => {
-    const query = e.target.value;
-    setDashboardSearchQuery(query);
-    if (query) {
-      setGames(
-        allGames.filter(
-          (game) =>
-            game.name.toLowerCase().includes(query.toLowerCase()) ||
-            (game.description && game.description.toLowerCase().includes(query.toLowerCase()))
-        )
-      );
-    } else {
-      setGames(allGames);
-    }
+    setDashboardSearchQuery(e.target.value);
   };
 
   if (loading || !user) {
@@ -996,6 +1046,7 @@ function DashboardComponent() {
             <h2 className="text-2xl font-bold text-white mb-4">
               {t.gameList}
             </h2>
+            {/* --- 💡 حقل البحث المعدل --- */}
             <div className="relative mb-4">
               <Search
                 className={`absolute top-3 ${
@@ -1006,11 +1057,17 @@ function DashboardComponent() {
                 type="text"
                 placeholder={t.searchGames}
                 value={dashboardSearchQuery}
-                onChange={handleDashboardSearch}
+                onChange={handleDashboardSearch} // <-- الدالة فقط تحدث الحالة
                 className={`w-full bg-white/10 border border-purple-500/30 rounded-lg ${
                   isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'
                 } py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400`}
               />
+              {/* 💡 مؤشر التحميل للبحث */}
+              {isSearching && (
+                 <Loader2 className={`absolute top-3 ${
+                  isRTL ? 'left-3' : 'right-3'
+                } w-5 h-5 text-purple-400 animate-spin`} />
+              )}
             </div>
 
             {/* القائمة */}
@@ -1031,7 +1088,7 @@ function DashboardComponent() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        setEditingGame({ ...game }); // نسخ اللعبة إلى حالة التعديل
+                        setEditingGame({ ...game }); 
                         setImageFile(null);
                         setScreenshotFiles([]);
                       }}
@@ -1040,7 +1097,7 @@ function DashboardComponent() {
                       <Edit2 className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => setGameToDelete(game)} // فتح نافذة التأكيد
+                      onClick={() => setGameToDelete(game)} 
                       className="bg-red-600 text-white p-2 rounded-lg"
                     >
                       <Trash2 className="w-5 h-5" />
