@@ -1,6 +1,10 @@
 import { supabase } from '@/utils/supabaseClient';
 
-// 💡 تم التحديث إلى نطاق موقعك الفعلي
+// --- 💡 إضافة جديدة: إجبار الملف على أن يكون ديناميكياً ---
+// هذا يمنع Vercel من تخزين نسخة "فاشلة" مؤقتاً
+export const revalidate = 0;
+// --- نهاية الإضافة ---
+
 const URL = 'https://porn4games.vercel.app';
 
 export default async function sitemap() {
@@ -8,17 +12,25 @@ export default async function sitemap() {
     // 1. جلب كل الألعاب من قاعدة البيانات
     const { data: games, error } = await supabase
       .from('games')
-      .select('id, created_at'); // جلب الحقول المطلوبة فقط
+      .select('id, created_at, updated_at'); // جلب الحقول المطلوبة
 
     if (error) {
+      console.error('Sitemap fetch error:', error.message); // 💡 إضافة لوج للخطأ
       throw new Error(error.message);
     }
 
     // 2. تحويل بيانات الألعاب إلى مسارات
-    const gamePaths = (games || []).map((game) => ({
-      url: `${URL}/game/${game.id}`,
-      lastModified: new Date(game.created_at).toISOString(), // 💡 الأفضل استخدام 'updated_at' إذا كان لديك
-    }));
+    const gamePaths = (games || []).map((game) => {
+      // 💡 استخدام 'updated_at' إن وجد، وإلا 'created_at'
+      const lastModified = game.updated_at
+        ? new Date(game.updated_at).toISOString()
+        : new Date(game.created_at).toISOString();
+
+      return {
+        url: `${URL}/game/${game.id}`,
+        lastModified: lastModified,
+      };
+    });
 
     // 3. إضافة الصفحات الثابتة (مثل الرئيسية)
     const routes = [
@@ -30,17 +42,10 @@ export default async function sitemap() {
 
     // 4. دمج الصفحات الثابتة والديناميكية وإرجاعها
     return [...routes, ...gamePaths];
-
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    return [
-      {
-        url: URL,
-        lastModified: new Date().toISOString(),
-      },
-    ];
+    // 💡 إرجاع مصفوفة فارغة بدلاً من صفحة رئيسية مكررة عند الخطأ
+    // هذا قد يساعد جوجل على فهم أن هناك خطأ
+    return [];
   }
 }
-
-// 💡 ملاحظة: Next.js سيقوم تلقائياً بتحويل هذا إلى ملف XML
-// عند زيارة /sitemap.xml
