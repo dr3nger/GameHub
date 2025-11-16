@@ -1,7 +1,7 @@
 import '@/styles/globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 
-// بيانات الموقع - 💡 تم تعديلها لاستخدام قالب العنوان
+// --- 💡 1. تم تطبيق تعديل اسم الموقع هنا ---
 export const metadata = {
   // 💡 سيتم استخدام هذا العنوان كافتراضي
   title: {
@@ -14,11 +14,13 @@ export const metadata = {
   // --- نهاية الإضافة ---
 
   // --- 💡💡 إضافة كود التحقق من جوجل 💡💡 ---
-  //
-  //  <<<<<!! استبدل "YOUR_VERIFICATION_CODE_HERE" بالكود الخاص بك من جوجل !!>>>>>
-  //
   verification: {
     google: 'NkgcraDasEkBlEGxR_teZYt5LX1R1xvfWMLwBWvrsLg',
+  },
+
+  // --- 💡 2. إضافة اسم الموقع لـ OpenGraph (كما اقترحت الصور) ---
+  openGraph: {
+    siteName: 'porn4games',
   },
   // --- نهاية الإضافة ---
 
@@ -27,12 +29,31 @@ export const metadata = {
   },
 };
 
+// --- 💡 3. دالة لإنشاء البيانات المنظمة (JSON-LD) ---
+// هذا هو الكود الذي سيحل مشكلة اسم "Vercel"
+const generateWebSiteSchema = () => {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    'name': 'porn4games', // <-- هذا هو الاسم الذي سيراه جوجل
+    'url': 'https://porn4games.vercel.app',
+  };
+  return JSON.stringify(schema);
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
         className={`min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white`}
       >
+        {/* --- 💡 4. إضافة البيانات المنظمة إلى الصفحة --- */}
+        {/* هذا الكود هو الذي نصحت به الصور لحل مشكلة اسم "Vercel" */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: generateWebSiteSchema() }}
+        />
+        {/* --- نهاية الإضافة --- */}
         <AuthProvider>
           {children}
         </AuthProvider>
