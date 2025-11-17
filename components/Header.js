@@ -241,7 +241,8 @@ export default function Header({ lang, t, allCategories, searchParams }) {
                       isRTL ? 'md:left-0' : 'md:right-0'
                     } top-full mt-4 w-[90vw] md:w-[40rem] bg-gray-800 border border-purple-500/30 rounded-lg z-20 shadow-lg p-4`}
                   >
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+                    {/* --- 💡 هذا هو السطر الذي تم تعديله 💡 --- */}
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2 max-h-[60vh] overflow-y-auto">
                       <button
                         onClick={() => updateQuery('category', null)}
                         className={`w-full text-center px-3 py-2 text-white hover:bg-purple-700 rounded-md transition-all ${
